@@ -1,46 +1,100 @@
-![Banner image](https://user-images.githubusercontent.com/10284570/173569848-c624317f-42b1-45a6-ab09-f0ea3c247648.png)
+# n8n-nodes-aimlapi
 
-# n8n-nodes-starter
+This is an n8n community node for [AI/ML API](https://aimlapi.com/?utm_source=n8n&utm_medium=github&utm_campaign=integration) integration.  
+It allows you to interact with large language models (LLMs) and multimodal models directly from your n8n workflows.
 
-This repo contains example nodes to help you get started building your own custom integrations for [n8n](https://n8n.io). It includes the node linter and other dependencies.
+[n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/reference/license/) workflow automation platform.
 
-To make your custom node available to the community, you must create it as an npm package, and [submit it to the npm registry](https://docs.npmjs.com/packages-and-modules/contributing-packages-to-the-registry).
+[AI/ML API](https://aimlapi.com/app/?utm_source=n8n&utm_medium=github&utm_campaign=integration) provides access to **300+ AI models**, including Deepseek, Gemini, ChatGPT, and many others — all with **enterprise-grade rate limits and uptimes**.
 
-## Prerequisites
+---
 
-You need the following installed on your development machine:
+## Features
 
-* [git](https://git-scm.com/downloads)
-* Node.js and pnpm. Minimum version Node 20. You can find instructions on how to install both using nvm (Node Version Manager) for Linux, Mac, and WSL [here](https://github.com/nvm-sh/nvm). For Windows users, refer to Microsoft's guide to [Install NodeJS on Windows](https://docs.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-windows).
-* Install n8n with:
-  ```
-  npm install n8n -g
-  ```
-* Recommended: follow n8n's guide to [set up your development environment](https://docs.n8n.io/integrations/creating-nodes/build/node-development-environment/).
+- Chat with any LLM available on AI/ML API
+- Dynamic model selection
+- Parameter tuning (temperature, max tokens, top-p, penalties)
+- Multiple output formats: raw, full response, messages, or plain text
+- Credential-based authentication
 
-## Using this starter
+---
 
-These are the basic steps for working with the starter. For detailed guidance on creating and publishing nodes, refer to the [documentation](https://docs.n8n.io/integrations/creating-nodes/).
+## Installation
 
-1. [Generate a new repository](https://github.com/n8n-io/n8n-nodes-starter/generate) from this template repository.
-2. Clone your new repo:
-   ```
-   git clone https://github.com/<your organization>/<your-repo-name>.git
-   ```
-3. Run `npm i` to install dependencies.
-4. Open the project in your editor.
-5. Browse the examples in `/nodes` and `/credentials`. Modify the examples, or replace them with your own nodes.
-6. Update the `package.json` to match your details.
-7. Run `npm lint` to check for errors or `npm lintfix` to automatically fix errors when possible.
-8. Test your node locally. Refer to [Run your node locally](https://docs.n8n.io/integrations/creating-nodes/test/run-node-locally/) for guidance.
-9. Replace this README with documentation for your node. Use the [README_TEMPLATE](README_TEMPLATE.md) to get started.
-10. Update the LICENSE file to use your details.
-11. [Publish](https://docs.npmjs.com/packages-and-modules/contributing-packages-to-the-registry) your package to npm.
+### Community Node (Recommended)
 
-## More information
+1. Open your n8n instance
+2. Go to **Settings → Community Nodes**
+3. Click **Install**
+4. Enter `n8n-nodes-aimlapi`
+5. Accept the prompt to install the node
+6. After installation, the node will appear under **AI/ML API** in the node palette
 
-Refer to our [documentation on creating nodes](https://docs.n8n.io/integrations/creating-nodes/) for detailed information on building your own nodes.
+### Manual Installation (Advanced)
 
-## License
+```bash
+npm install n8n-nodes-aimlapi
+````
 
-[MIT](https://github.com/n8n-io/n8n-nodes-starter/blob/master/LICENSE.md)
+Then restart your `n8n` instance.
+
+---
+
+## Configuration
+
+### Credentials
+
+To use this node, you must configure **AI/ML API** credentials:
+
+1. Sign up at [https://aimlapi.com/](https://aimlapi.com/?utm_source=n8n&utm_medium=github&utm_campaign=integration)
+2. Go to your [dashboard](https://aimlapi.com/app/?utm_source=n8n&utm_medium=github&utm_campaign=integration) and generate an API key
+3. In n8n, create new credentials of type **AI/ML API**
+4. Paste your API key
+5. Save and use in the node
+
+📚 You can also refer to the [provider documentation](https://docs.aimlapi.com/?utm_source=n8n&utm_medium=github&utm_campaign=integration) for detailed API specs.
+
+### Node Parameters
+
+* **Model**: Select model from the list (e.g. `gpt-3.5-turbo`)
+* **Prompt**: User prompt to send to the model
+* **Extract From Response**:
+
+  * `Text Only (First Message)` – plain answer string
+  * `Assistant Messages` – array of `message` objects
+  * `Choices Array` – raw OpenAI-style `choices[]`
+  * `Full Raw JSON` – full API response
+* **Options**:
+
+  * **Temperature**
+  * **Top P**
+  * **Max Tokens**
+  * **Presence Penalty**
+  * **Frequency Penalty**
+  * **Response Format** (e.g. `text`)
+
+---
+
+## Usage Example
+
+1. Add a **Manual Trigger**
+2. Add the **AI/ML API** node
+3. Configure credentials
+4. Set a model (e.g. `gpt-3.5-turbo`)
+5. Enter prompt: `What is the capital of France?`
+6. Select `Extract: Text Only`
+7. Execute — you’ll get `Paris`
+
+---
+
+## Troubleshooting
+
+* If the node doesn't show up, try restarting your instance
+* If the icon or name doesn't render, make sure you ran `npm run build && gulp build:icons`
+* To debug model list: ensure credentials and `/models` endpoint return valid JSON
+
+---
+
+## Support
+
+Please open an issue or pull request in the [GitHub repository](https://github.com/D1m7asis/n8n-nodes-aimlapi) if you encounter problems.
