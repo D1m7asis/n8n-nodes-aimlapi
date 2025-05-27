@@ -9,7 +9,7 @@ import {
 } from 'n8n-workflow';
 import {NodeConnectionType} from 'n8n-workflow/dist/Interfaces';
 
-export class AIMLApi implements INodeType {
+export class AimlApi implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'AI/ML API',
 		name: 'aimlApi',
@@ -18,7 +18,7 @@ export class AIMLApi implements INodeType {
 		version: 1,
 		description: 'AI chat completion via AI/ML API (AIMLAPI)',
 		defaults: {
-			name: 'AIMLAPI ChatCompletion',
+			name: 'AI/ML Chat Completion',
 		},
 		inputs: [NodeConnectionType.Main],
 		outputs: [NodeConnectionType.Main],
