@@ -1,5 +1,6 @@
 import {
 	IExecuteSingleFunctions,
+	IHttpRequestOptions,
 	ILoadOptionsFunctions,
 	IN8nHttpFullResponse,
 	INodeExecutionData,
@@ -32,7 +33,7 @@ export class AimlApi implements INodeType {
 			baseURL: '={{ $credentials.url.endsWith("/") ? $credentials.url.slice(0, -1) : $credentials.url }}',
 			headers: {
 				'Content-Type': 'application/json',
-				'Authorization': 'Bearer {{$credentials.apiKey}}',
+				'X-Title': `n8n AIMLAPI Node`,
 			},
 		},
 		properties: [
@@ -230,21 +231,27 @@ export class AimlApi implements INodeType {
 			async getModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const credentials = await this.getCredentials('aimlApi');
 				const apiUrl = credentials.url as string;
-				const apiKey = credentials.apiKey as string;
-				const endpoint = apiUrl.endsWith('/') ? `${apiUrl}models` : `${apiUrl}/models`;
+				const endpoint = apiUrl.endsWith('/')
+					? `${apiUrl}models`
+					: `${apiUrl}/models`;
 
-				const response = await this.helpers.httpRequest({
+				const options: IHttpRequestOptions = {
 					method: 'GET',
 					url: endpoint,
-					headers: {Authorization: `Bearer ${apiKey}`},
 					json: true,
-				});
+				};
+
+				const response = await this.helpers.httpRequestWithAuthentication.call(
+					this,
+					'aimlApi',
+					options
+				);
 
 				const models = response?.models ?? response?.data ?? response;
 
-				return models
-					.filter((model: any) => model.type === 'chat-completion')
-					.map((model: any) => ({
+				return (models as any[])
+					.filter((model) => model.type === 'chat-completion')
+					.map((model) => ({
 						name: model.info?.name || model.name || model.id,
 						value: model.id,
 					}));
