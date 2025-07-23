@@ -17,7 +17,7 @@ export class AimlApi implements INodeType {
 		icon: 'file:aimlapi.svg',
 		group: ['transform'],
 		version: 1,
-		description: 'AI chat completion via AI/ML API (AIMLAPI)',
+		description: 'Choose from 300+ AI models from Gemini and ChatGPT to DeepSeek and Llama.',
 		defaults: {
 			name: 'AI/ML Chat Completion',
 		},
