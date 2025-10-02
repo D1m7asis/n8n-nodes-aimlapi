@@ -12,9 +12,11 @@ It allows you to interact with large language models (LLMs) and multimodal model
 ## Features
 
 - Chat with any LLM available on AI/ML API
-- Dynamic model selection
+- Generate AI images with supported diffusion and vision models
+- Dynamic model selection for chat and image endpoints
 - Parameter tuning (temperature, max tokens, top-p, penalties)
 - Multiple output formats: raw, full response, messages, or plain text
+- Flexible image outputs: URLs, base64 data, or raw payloads
 - Credential-based authentication
 
 ---
@@ -56,15 +58,16 @@ To use this node, you must configure **AI/ML API** credentials:
 
 ### Node Parameters
 
-* **Model**: Select model from the list (e.g. `gpt-3.5-turbo`)
-* **Prompt**: User prompt to send to the model
-* **Extract From Response**:
+* **Operation** – Choose between `Chat Completion` and `Image Generation`.
+* **Model** – Select a model from the list or provide an ID via expression.
+* **Chat Prompt** *(Chat Completion)* – User prompt to send to the chat model.
+* **Chat Extract From Response** – Decide what to return:
 
   * `Text Only (First Message)` – plain answer string
   * `Assistant Messages` – array of `message` objects
   * `Choices Array` – raw OpenAI-style `choices[]`
   * `Full Raw JSON` – full API response
-* **Options**:
+* **Chat Options** – Fine-tune completions with:
 
   * **Temperature**
   * **Top P**
@@ -72,6 +75,17 @@ To use this node, you must configure **AI/ML API** credentials:
   * **Presence Penalty**
   * **Frequency Penalty**
   * **Response Format** (e.g. `text`)
+* **Image Prompt** *(Image Generation)* – Describe the image you want the model to create.
+* **Image Extract From Response** – Return the first/all URLs, first/all base64 images, or the raw payload.
+* **Image Options** – Configure additional rendering settings:
+
+  * **Background**
+  * **Image Count**
+  * **Negative Prompt**
+  * **Quality**
+  * **Response Format** (`url` or `b64_json`)
+  * **Size**
+  * **Style**
 
 ---
 
