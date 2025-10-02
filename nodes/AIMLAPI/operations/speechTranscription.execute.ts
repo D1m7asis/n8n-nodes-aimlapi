@@ -1,10 +1,17 @@
-import type { IDataObject, IHttpRequestOptions, INodeExecutionData } from 'n8n-workflow';
-import { resolveEndpoint } from '../utils/request';
-import { setIfDefined } from '../utils/object';
+import FormData from 'form-data';
+import type { IDataObject, INodeExecutionData } from 'n8n-workflow';
+import { createRequestOptions } from '../utils/request';
 import type { OperationExecuteContext, SpeechTranscriptionExtractOption } from '../types';
 
-const AIMLAPI_NODE_TITLE = 'n8n AIMLAPI Node';
 const TEXTUAL_FORMATS = new Set(['text', 'srt', 'vtt']);
+
+function appendIfDefined(form: FormData, field: string, value: unknown) {
+  if (value === undefined || value === null) {
+    return;
+  }
+
+  form.append(field, typeof value === 'string' ? value : String(value));
+}
 
 // Uploads audio and retrieves transcription output for STT models
 export async function executeSpeechTranscription({
@@ -23,35 +30,25 @@ export async function executeSpeechTranscription({
   const binaryData = await context.helpers.getBinaryDataBuffer(itemIndex, binaryPropertyName);
   const binaryMetadata = context.helpers.assertBinaryData(itemIndex, binaryPropertyName);
 
-  const endpoint = resolveEndpoint(baseURL, '/v1/stt');
   const expectsText = TEXTUAL_FORMATS.has((options.responseFormat as string) ?? '');
 
-  const formData: IDataObject = {
-    file: {
-      value: binaryData,
-      options: {
-        filename: binaryMetadata.fileName ?? `audio.${binaryMetadata.fileExtension ?? 'wav'}`,
-        contentType: binaryMetadata.mimeType,
-      },
-    },
-    model,
-  };
+  const formData = new FormData();
+  formData.append('file', binaryData, {
+    filename: binaryMetadata.fileName ?? `audio.${binaryMetadata.fileExtension ?? 'wav'}`,
+    contentType: binaryMetadata.mimeType ?? undefined,
+  });
+  formData.append('model', model);
 
-  setIfDefined(formData, 'language', options.language);
-  setIfDefined(formData, 'prompt', options.prompt);
-  setIfDefined(formData, 'response_format', options.responseFormat);
-  setIfDefined(formData, 'temperature', options.temperature);
+  appendIfDefined(formData, 'language', options.language);
+  appendIfDefined(formData, 'prompt', options.prompt);
+  appendIfDefined(formData, 'response_format', options.responseFormat);
+  appendIfDefined(formData, 'temperature', options.temperature);
 
-  const requestOptions: IHttpRequestOptions = {
-    method: 'POST',
-    baseURL: endpoint.baseURL,
-    url: endpoint.url,
-    headers: {
-      'X-Title': AIMLAPI_NODE_TITLE,
-    },
-    formData,
+  const requestOptions = createRequestOptions(baseURL, '/v1/stt', 'POST', {
+    headers: formData.getHeaders(),
+    body: formData,
     json: !expectsText,
-  };
+  });
 
   const response = (await context.helpers.httpRequestWithAuthentication.call(
     context,

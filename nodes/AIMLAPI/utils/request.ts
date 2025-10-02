@@ -1,4 +1,4 @@
-import type { IHttpRequestOptions } from 'n8n-workflow';
+import type { IDataObject, IHttpRequestMethods, IHttpRequestOptions } from 'n8n-workflow';
 
 // Header value required by AIMLAPI to identify the integration
 const AIMLAPI_NODE_TITLE = 'n8n AIMLAPI Node';
@@ -33,24 +33,46 @@ function resolveEndpoint(baseURL: string, path: string) {
   };
 }
 
+type RequestOptionsOverrides = Omit<IHttpRequestOptions, 'baseURL' | 'url' | 'method' | 'headers'> & {
+  headers?: IDataObject;
+};
+
+function hasContentTypeHeader(headers?: IDataObject): boolean {
+  if (!headers) {
+    return false;
+  }
+
+  return Object.keys(headers).some((key) => key.toLowerCase() === 'content-type');
+}
+
 // Builds a JSON request configuration for AIMLAPI endpoints
 export function createRequestOptions(
   baseURL: string,
   path: string,
-  method: string = 'POST',
+  method: IHttpRequestMethods = 'POST',
+  overrides: RequestOptionsOverrides = {},
 ): IHttpRequestOptions {
   const endpoint = resolveEndpoint(baseURL, path);
+
+  const { headers: overrideHeaders, ...restOverrides } = overrides;
+
+  const headers: IDataObject = {
+    'X-Title': AIMLAPI_NODE_TITLE,
+    ...(overrideHeaders ?? {}),
+  };
+
+  if (!hasContentTypeHeader(headers)) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   return {
     method,
     baseURL: endpoint.baseURL,
     url: endpoint.url,
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Title': AIMLAPI_NODE_TITLE,
-    },
+    headers,
     json: true,
     body: {},
+    ...restOverrides,
   };
 }
 
