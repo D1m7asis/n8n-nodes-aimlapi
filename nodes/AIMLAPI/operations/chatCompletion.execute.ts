@@ -3,6 +3,7 @@ import { createRequestOptions } from '../utils/request';
 import { setIfDefined } from '../utils/object';
 import type { ChatExtractOption, OperationExecuteContext } from '../types';
 
+// Handles the JSON request/response cycle for chat-completion models
 export async function executeChatCompletion({
   context,
   itemIndex,
@@ -13,7 +14,7 @@ export async function executeChatCompletion({
   const extract = context.getNodeParameter('extract', itemIndex) as ChatExtractOption;
   const options = context.getNodeParameter('options', itemIndex, {}) as IDataObject;
 
-  const requestOptions = createRequestOptions(baseURL, '/chat/completions', 'n8n AIMLAPI Node');
+  const requestOptions = createRequestOptions(baseURL, '/v1/chat/completions');
   const body: IDataObject = {
     model,
     messages: [

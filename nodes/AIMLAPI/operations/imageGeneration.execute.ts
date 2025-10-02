@@ -3,6 +3,7 @@ import { createRequestOptions } from '../utils/request';
 import { setIfDefined } from '../utils/object';
 import type { ImageExtractOption, OperationExecuteContext } from '../types';
 
+// Sends prompts to the image generation endpoint and normalizes the response
 export async function executeImageGeneration({
   context,
   itemIndex,
@@ -13,11 +14,7 @@ export async function executeImageGeneration({
   const extract = context.getNodeParameter('imageExtract', itemIndex) as ImageExtractOption;
   const options = context.getNodeParameter('imageOptions', itemIndex, {}) as IDataObject;
 
-  const requestOptions = createRequestOptions(
-    baseURL,
-    '/images/generations',
-    'n8n AIMLAPI Image Generation Node',
-  );
+  const requestOptions = createRequestOptions(baseURL, '/v1/images/generations');
 
   const body: IDataObject = {
     model,
