@@ -1,0 +1,21 @@
+{
+	"node": "n8n-nodes-base.AiScraper",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": [
+		"Miscellaneous"
+	],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://parsera.org/blog/AI-Scraper-by-Parsera-n8n-user-manual"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://parsera.org/blog/AI-Scraper-by-Parsera-n8n-user-manual"
+			}
+		]
+	},
+	"alias": ["Parsera"]
+}
