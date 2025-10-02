@@ -1,14 +1,13 @@
 import {
-	IExecuteSingleFunctions,
-	IHttpRequestOptions,
-	ILoadOptionsFunctions,
-	IN8nHttpFullResponse,
-	INodeExecutionData,
-	INodePropertyOptions,
-	INodeType,
-	INodeTypeDescription,
+        IExecuteSingleFunctions,
+        ILoadOptionsFunctions,
+        IN8nHttpFullResponse,
+        INodeExecutionData,
+        INodeType,
+        INodeTypeDescription,
 } from 'n8n-workflow';
 import {NodeConnectionType} from 'n8n-workflow/dist/Interfaces';
+import {fetchModelsByType} from './shared';
 
 export class AimlApi implements INodeType {
 	description: INodeTypeDescription = {
@@ -41,9 +40,9 @@ export class AimlApi implements INodeType {
 				displayName: 'Model Name or ID',
 				name: 'model',
 				type: 'options',
-				typeOptions: {
-					loadOptionsMethod: 'getModels',
-				},
+                                typeOptions: {
+                                        loadOptionsMethod: 'getChatModels',
+                                },
 				default: '',
 				required: true,
 				description: 'Choose model or specify an ID using an expression. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
@@ -228,34 +227,9 @@ export class AimlApi implements INodeType {
 
 	methods = {
 		loadOptions: {
-			async getModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const credentials = await this.getCredentials('aimlApi');
-				const apiUrl = credentials.url as string;
-				const endpoint = apiUrl.endsWith('/')
-					? `${apiUrl}models`
-					: `${apiUrl}/models`;
-
-				const options: IHttpRequestOptions = {
-					method: 'GET',
-					url: endpoint,
-					json: true,
-				};
-
-				const response = await this.helpers.httpRequestWithAuthentication.call(
-					this,
-					'aimlApi',
-					options
-				);
-
-				const models = response?.models ?? response?.data ?? response;
-
-				return (models as any[])
-					.filter((model) => model.type === 'chat-completion')
-					.map((model) => ({
-						name: model.info?.name || model.name || model.id,
-						value: model.id,
-					}));
-			},
-		},
-	};
+                        async getChatModels(this: ILoadOptionsFunctions) {
+                                return fetchModelsByType.call(this, ['chat-completion']);
+                        },
+                },
+        };
 }

@@ -12,6 +12,7 @@ It allows you to interact with large language models (LLMs) and multimodal model
 ## Features
 
 - Chat with any LLM available on AI/ML API
+- Generate images with OpenAI DALL·E, Flux, and other providers
 - Dynamic model selection
 - Parameter tuning (temperature, max tokens, top-p, penalties)
 - Multiple output formats: raw, full response, messages, or plain text
@@ -54,7 +55,7 @@ To use this node, you must configure **AI/ML API** credentials:
 
 📚 You can also refer to the [provider documentation](https://docs.aimlapi.com/?utm_source=n8n&utm_medium=github&utm_campaign=integration) for detailed API specs.
 
-### Node Parameters
+### Chat Completion Node Parameters
 
 * **Model**: Select model from the list (e.g. `gpt-3.5-turbo`)
 * **Prompt**: User prompt to send to the model
@@ -73,6 +74,26 @@ To use this node, you must configure **AI/ML API** credentials:
   * **Frequency Penalty**
   * **Response Format** (e.g. `text`)
 
+### Image Generation Node Parameters
+
+* **Model**: Pick an image model such as `dall-e-3` or `flux-dev`
+* **Prompt**: Textual instructions describing the desired image
+* **Extract From Response**:
+
+  * `Generated Images` – one item per generated image containing URL/base64
+  * `First Image Only` – pick only the first generated image
+  * `Image URLs Array` – return all URLs in a single array
+  * `Base64 Array` – return base64 payloads in a single array
+  * `Full Raw JSON` – return the API response without processing
+* **Options**:
+
+  * **Image Count** – number of images to generate
+  * **Size** – choose target resolution
+  * **Quality** – `standard` or `high`
+  * **Style** – `natural` or `vivid`
+  * **Background** – `default` or `transparent`
+  * **Response Format** – `url` or `b64_json`
+
 ---
 
 ## Usage Example
@@ -84,6 +105,13 @@ To use this node, you must configure **AI/ML API** credentials:
 5. Enter prompt: `What is the capital of France?`
 6. Select `Extract: Text Only`
 7. Execute — you’ll get `Paris`
+
+For image generation:
+
+1. Add the **AI/ML Image Generation** node
+2. Select an image model (e.g. `dall-e-3`)
+3. Provide a visual prompt such as `A watercolor landscape of mountains at sunset`
+4. Run the workflow and retrieve the generated image URL or base64 payload
 
 ---
 
