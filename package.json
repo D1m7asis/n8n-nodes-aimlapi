@@ -42,7 +42,8 @@
       "dist/credentials/AIMLApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/AIMLAPI/AimlApi.node.js"
+      "dist/nodes/AIMLAPI/AimlApi.node.js",
+      "dist/nodes/AIMLAPI/AimlApiImageGeneration.node.js"
     ]
   },
   "devDependencies": {
