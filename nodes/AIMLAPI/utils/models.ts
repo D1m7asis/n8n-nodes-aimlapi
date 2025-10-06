@@ -1,5 +1,6 @@
-import type { IDataObject, INodePropertyOptions } from 'n8n-workflow';
+import type { IDataObject, IExecuteFunctions, INodePropertyOptions } from 'n8n-workflow';
 import type { Operation } from '../types';
+import { createRequestOptions } from './request';
 
 // Maps operations to known model type aliases returned by the /models endpoint
 const OPERATION_TYPE_ALIASES: Record<Operation, Set<string>> = {
@@ -121,4 +122,67 @@ export function toModelOptions(models: unknown, operation: Operation): INodeProp
       } satisfies INodePropertyOptions;
     })
     .filter((option) => option.value !== '');
+}
+
+const MODEL_ENDPOINT_CACHE = new WeakMap<IExecuteFunctions, Map<string, string[]>>();
+
+function toStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((entry): entry is string => typeof entry === 'string');
+  }
+
+  return [];
+}
+
+function ensureEndpointCache(context: IExecuteFunctions) {
+  let cache = MODEL_ENDPOINT_CACHE.get(context);
+
+  if (!cache) {
+    cache = new Map<string, string[]>();
+    MODEL_ENDPOINT_CACHE.set(context, cache);
+  }
+
+  return cache;
+}
+
+export async function getModelEndpoints(
+  context: IExecuteFunctions,
+  baseURL: string,
+  modelId: string,
+): Promise<string[]> {
+  const cache = ensureEndpointCache(context);
+
+  if (cache.has(modelId)) {
+    return cache.get(modelId) ?? [];
+  }
+
+  try {
+    const requestOptions = createRequestOptions(baseURL, '/models', 'GET');
+    const response = (await context.helpers.httpRequestWithAuthentication.call(
+      context,
+      'aimlApi',
+      requestOptions,
+    )) as IDataObject;
+
+    const models = ((response.models ?? response.data) as IDataObject[]) ?? [];
+
+    for (const model of models) {
+      if (!model || typeof model !== 'object') {
+        continue;
+      }
+
+      const id = typeof model.id === 'string' ? model.id : undefined;
+
+      if (!id || cache.has(id)) {
+        continue;
+      }
+
+      cache.set(id, toStringArray(model.endpoints));
+    }
+  } catch (error) {
+    cache.set(modelId, []);
+    return [];
+  }
+
+  return cache.get(modelId) ?? [];
 }

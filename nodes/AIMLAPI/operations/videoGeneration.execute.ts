@@ -1,6 +1,8 @@
 import type { IDataObject, INodeExecutionData } from 'n8n-workflow';
 import { createRequestOptions } from '../utils/request';
 import { setIfDefined } from '../utils/object';
+import { getModelEndpoints } from '../utils/models';
+import { resolveGenerationResponse } from '../utils/generation';
 import type { OperationExecuteContext, VideoExtractOption } from '../types';
 
 function resolveVideoUrl(entry: IDataObject): string | undefined {
@@ -22,7 +24,13 @@ export async function executeVideoGeneration({
   const extract = context.getNodeParameter('videoExtract', itemIndex) as VideoExtractOption;
   const options = context.getNodeParameter('videoOptions', itemIndex, {}) as IDataObject;
 
-  const requestOptions = createRequestOptions(baseURL, '/v2/video/generations');
+  const endpoints = await getModelEndpoints(context, baseURL, model);
+  const generationPath =
+    endpoints.find((endpoint) => endpoint.includes('/v2/generate/video')) ??
+    endpoints.find((endpoint) => endpoint.includes('/video/generations')) ??
+    '/v2/video/generations';
+
+  const requestOptions = createRequestOptions(baseURL, generationPath);
 
   const body: IDataObject = {
     model,
@@ -42,11 +50,15 @@ export async function executeVideoGeneration({
 
   requestOptions.body = body;
 
-  const response = (await context.helpers.httpRequestWithAuthentication.call(
+  const initialResponse = (await context.helpers.httpRequestWithAuthentication.call(
     context,
     'aimlApi',
     requestOptions,
   )) as IDataObject;
+
+  const response = await resolveGenerationResponse(context, baseURL, generationPath, initialResponse, {
+    mediaType: 'video',
+  });
 
   const data = (response.data as IDataObject[]) ?? [];
 

@@ -1,6 +1,8 @@
 import type { IDataObject, INodeExecutionData } from 'n8n-workflow';
 import { createRequestOptions } from '../utils/request';
 import { setIfDefined } from '../utils/object';
+import { getModelEndpoints } from '../utils/models';
+import { resolveGenerationResponse } from '../utils/generation';
 import type { AudioExtractOption, OperationExecuteContext } from '../types';
 
 function resolveAudioUrl(entry: IDataObject): string | undefined {
@@ -31,7 +33,12 @@ export async function executeAudioGeneration({
   const extract = context.getNodeParameter('audioExtract', itemIndex) as AudioExtractOption;
   const options = context.getNodeParameter('audioOptions', itemIndex, {}) as IDataObject;
 
-  const requestOptions = createRequestOptions(baseURL, '/v2/generate/audio');
+  const endpoints = await getModelEndpoints(context, baseURL, model);
+  const generationPath =
+    endpoints.find((endpoint) => endpoint.includes('/v2/generate/audio')) ??
+    '/v2/generate/audio';
+
+  const requestOptions = createRequestOptions(baseURL, generationPath);
 
   const body: IDataObject = {
     model,
@@ -50,11 +57,15 @@ export async function executeAudioGeneration({
 
   requestOptions.body = body;
 
-  const response = (await context.helpers.httpRequestWithAuthentication.call(
+  const initialResponse = (await context.helpers.httpRequestWithAuthentication.call(
     context,
     'aimlApi',
     requestOptions,
   )) as IDataObject;
+
+  const response = await resolveGenerationResponse(context, baseURL, generationPath, initialResponse, {
+    mediaType: 'audio',
+  });
 
   const data = (response.data as IDataObject[]) ?? [];
 
