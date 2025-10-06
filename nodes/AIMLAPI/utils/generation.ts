@@ -16,7 +16,9 @@ interface GenerationOptions {
 }
 
 function sleep(duration: number) {
-  return new Promise((resolve) => setTimeout(resolve, duration));
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, duration);
+  });
 }
 
 function collectObjects(root: unknown): IDataObject[] {

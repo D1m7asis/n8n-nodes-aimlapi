@@ -88,6 +88,6 @@ export async function executeAudioGeneration({
       return { json: { base64 } };
     }
     default:
-      return { json: { result: rawResponse } };
+      return { json: { result: rawResponse } as IDataObject };
   }
 }

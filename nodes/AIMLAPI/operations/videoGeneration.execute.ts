@@ -72,6 +72,6 @@ export async function executeVideoGeneration({
       return { json: { urls } };
     }
     default:
-      return { json: { result: rawResponse } };
+      return { json: { result: rawResponse } as IDataObject };
   }
 }
