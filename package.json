@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-aimlapi",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Custom n8n node for integrating with the AI/ML API platform (AIMLAPI) to interact with LLMs and multimodal AI models such as chat completion endpoints.",
   "keywords": [
     "n8n-community-node-package",
@@ -47,6 +47,7 @@
   },
   "devDependencies": {
     "@typescript-eslint/parser": "~8.32.0",
+    "@types/node": "^22.13.4",
     "eslint": "^8.57.0",
     "eslint-plugin-n8n-nodes-base": "^1.16.3",
     "gulp": "^5.0.0",
@@ -55,5 +56,8 @@
   },
   "peerDependencies": {
     "n8n-workflow": "*"
+  },
+  "dependencies": {
+    "form-data": "^4.0.0"
   }
 }

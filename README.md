@@ -12,9 +12,14 @@ It allows you to interact with large language models (LLMs) and multimodal model
 ## Features
 
 - Chat with any LLM available on AI/ML API
-- Dynamic model selection
-- Parameter tuning (temperature, max tokens, top-p, penalties)
-- Multiple output formats: raw, full response, messages, or plain text
+- Generate AI images with supported diffusion and vision models
+- Create AI music and sound effects with audio-generation models
+- Render text-to-video or image-to-video clips
+- Convert text to speech and speech to text via TTS/STT models
+- Produce text embeddings for search and retrieval workflows
+- Dynamic model selection per modality with shared authentication
+- Parameter tuning (temperature, max tokens, top-p, penalties, etc.)
+- Multiple output formats: raw payloads or curated fields for each modality
 - Credential-based authentication
 
 ---
@@ -56,22 +61,50 @@ To use this node, you must configure **AI/ML API** credentials:
 
 ### Node Parameters
 
-* **Model**: Select model from the list (e.g. `gpt-3.5-turbo`)
-* **Prompt**: User prompt to send to the model
-* **Extract From Response**:
+* **Operation** – Select the modality (`Chat Completion`, `Image Generation`, `Audio Generation`, `Video Generation`, `Speech Synthesis`, `Speech Transcription`, or `Embedding Generation`).
+* **Model** – Pick a model from the filtered list (dependent on operation) or provide an ID via expression.
 
-  * `Text Only (First Message)` – plain answer string
-  * `Assistant Messages` – array of `message` objects
-  * `Choices Array` – raw OpenAI-style `choices[]`
-  * `Full Raw JSON` – full API response
-* **Options**:
+#### Chat Completion
 
-  * **Temperature**
-  * **Top P**
-  * **Max Tokens**
-  * **Presence Penalty**
-  * **Frequency Penalty**
-  * **Response Format** (e.g. `text`)
+* **Prompt** – User prompt to send to the chat model.
+* **Extract From Response** – Decide what to return (`Text Only`, `Assistant Messages`, `Choices Array`, or `Full Raw JSON`).
+* **Options** – Fine-tune completions with **Temperature**, **Top P**, **Max Tokens**, **Presence Penalty**, **Frequency Penalty**, and **Response Format**.
+
+#### Image Generation
+
+* **Prompt** – Describe the image you want the model to create.
+* **Extract From Response** – Return the first/all URLs, first/all base64 images, or the raw payload.
+* **Image Options** – Configure **Background**, **Image Count**, **Negative Prompt**, **Quality**, **Response Format**, **Size**, and **Style**.
+
+#### Audio Generation
+
+* **Prompt** – Describe the audio clip you want to generate.
+* **Extract From Response** – Return audio URLs, base64 blobs, or the raw payload.
+* **Audio Options** – Adjust **Audio Format**, **Duration**, **Mode**, **Negative Prompt**, **Prompt Strength**, **Seed**, **Reference Audio URL**, **Instrument**, and **CFG Scale**.
+
+#### Video Generation
+
+* **Prompt** – Describe the scene for the generated video.
+* **Extract From Response** – Return the first/all video URLs or the raw payload.
+* **Video Options** – Control **Aspect Ratio/Ratio**, **Duration**, **Kling Types & Image Lists**, **Google Veo Tail Images & Prompt Enhancement**, **Alibaba Resolution/Watermark/Prompt Expansion**, **MiniMax Prompt Optimizer & First Frame**, **Runway Last Image**, plus legacy toggles like **Negative Prompt**, **Prompt Strength**, **Reference Media**, **Background Audio**, **CFG Scale**, and **Seed**.
+
+#### Speech Synthesis
+
+* **Text** – Content that should be spoken aloud.
+* **Extract From Response** – Return an audio URL, base64 payload, or the raw response.
+* **Speech Options** – Configure **Voice**, **Audio Format**, **Sample Rate**, **Speaking Rate**, and **Style**.
+
+#### Speech Transcription
+
+* **Binary Property** – Name of the binary property that contains the audio file.
+* **Extract From Response** – Return transcript text, segment breakdowns, or the raw payload.
+* **Transcription Options** – Provide **Language**, **Prompt**, **Response Format**, and **Temperature**.
+
+#### Embedding Generation
+
+* **Input Text** – Text that should be converted into an embedding vector.
+* **Extract From Response** – Return the first vector, all vectors, or the raw payload.
+* **Embedding Options** – Configure **Encoding Format** and **User Identifier** metadata.
 
 ---
 
