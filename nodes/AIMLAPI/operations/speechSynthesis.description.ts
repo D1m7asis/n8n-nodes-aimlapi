@@ -57,8 +57,8 @@ export const speechSynthesisProperties: INodeProperties[] = [
     description: 'Fine-tune the generated audio for compatible voice models',
     options: [
       {
-        displayName: 'Audio Format',
-        name: 'audioFormat',
+        displayName: 'Container',
+        name: 'container',
         type: 'options',
         options: [
           {
@@ -75,7 +75,44 @@ export const speechSynthesisProperties: INodeProperties[] = [
           },
         ],
         default: 'mp3',
-        description: 'Preferred output audio format',
+        description: 'File wrapper to use for Aura text-to-speech models',
+      },
+      {
+        displayName: 'Encoding',
+        name: 'encoding',
+        type: 'options',
+        options: [
+          {
+            name: 'AAC',
+            value: 'aac',
+          },
+          {
+            name: 'FLAC',
+            value: 'flac',
+          },
+          {
+            name: 'Linear16',
+            value: 'linear16',
+          },
+          {
+            name: 'MP3',
+            value: 'mp3',
+          },
+          {
+            name: 'OPUS',
+            value: 'opus',
+          },
+          {
+            name: 'ULaw',
+            value: 'mulaw',
+          },
+          {
+            name: 'ALaw',
+            value: 'alaw',
+          },
+        ],
+        default: 'mp3',
+        description: 'Codec to encode the generated audio with',
       },
       {
         displayName: 'Sample Rate',
@@ -88,30 +125,74 @@ export const speechSynthesisProperties: INodeProperties[] = [
         description: 'Output sample rate in hertz',
       },
       {
-        displayName: 'Speaking Rate',
-        name: 'speed',
-        type: 'number',
-        typeOptions: {
-          minValue: 0.5,
-          maxValue: 2,
-          numberPrecision: 2,
-        },
-        default: 1,
-        description: 'Playback speed multiplier (0.5-2x)',
-      },
-      {
-        displayName: 'Style',
-        name: 'style',
-        type: 'string',
-        default: '',
-        description: 'Optional speaking style or emotion hint',
-      },
-      {
         displayName: 'Voice',
         name: 'voice',
         type: 'string',
         default: '',
-        description: 'Voice or speaker preset to use when the model supports it',
+        description: 'ElevenLabs voice to request when using an ElevenLabs model',
+      },
+      {
+        displayName: 'Output Format',
+        name: 'outputFormat',
+        type: 'options',
+        options: [
+          {
+            name: 'URL',
+            value: 'url',
+          },
+          {
+            name: 'Hex',
+            value: 'hex',
+          },
+        ],
+        default: 'url',
+        description: 'Controls the response format for ElevenLabs models',
+      },
+      {
+        displayName: 'Enable Subtitles',
+        name: 'subtitle',
+        type: 'boolean',
+        default: false,
+        description: 'Toggle subtitle generation for compatible ElevenLabs models',
+      },
+      {
+        displayName: 'Script Override',
+        name: 'scriptOverride',
+        type: 'string',
+        typeOptions: {
+          rows: 4,
+        },
+        default: '',
+        description: 'Provide a custom script when using Microsoft VALL-E voice models',
+      },
+      {
+        displayName: 'Speakers (JSON)',
+        name: 'speakers',
+        type: 'string',
+        typeOptions: {
+          rows: 4,
+        },
+        default: '',
+        description: 'JSON array describing speakers for Microsoft VALL-E models',
+      },
+      {
+        displayName: 'Seed',
+        name: 'seed',
+        type: 'number',
+        default: 0,
+        description: 'Deterministic sampling seed for Microsoft VALL-E models',
+      },
+      {
+        displayName: 'CFG Scale',
+        name: 'cfgScale',
+        type: 'number',
+        typeOptions: {
+          minValue: 0.1,
+          maxValue: 2,
+          numberPrecision: 2,
+        },
+        default: 1.3,
+        description: 'Classifier Free Guidance scale for Microsoft VALL-E models',
       },
     ],
   },

@@ -3,6 +3,25 @@ import { createRequestOptions } from '../utils/request';
 import { setIfDefined } from '../utils/object';
 import type { OperationExecuteContext, SpeechSynthesisExtractOption } from '../types';
 
+function normalizeModelId(model: string): string {
+  return model.trim().toLowerCase();
+}
+
+function isAuraModel(model: string): boolean {
+  const normalized = normalizeModelId(model);
+  return normalized.startsWith('#g1_aura');
+}
+
+function isElevenLabsModel(model: string): boolean {
+  const normalized = normalizeModelId(model);
+  return normalized.startsWith('elevenlabs/');
+}
+
+function isMicrosoftVallEModel(model: string): boolean {
+  const normalized = normalizeModelId(model);
+  return normalized.startsWith('microsoft/');
+}
+
 function pickFirstUrl(payload: IDataObject): string | undefined {
   const directUrl = (payload.audio_url as string | undefined) ?? (payload.url as string | undefined);
   if (directUrl) {
@@ -42,16 +61,67 @@ export async function executeSpeechSynthesis({
 
   const body: IDataObject = {
     model,
-    input,
-    text: input,
   };
 
-  setIfDefined(body, 'voice', options.voice);
-  setIfDefined(body, 'style', options.style);
-  setIfDefined(body, 'format', options.audioFormat);
-  setIfDefined(body, 'audio_format', options.audioFormat);
-  setIfDefined(body, 'sample_rate', options.sampleRate);
-  setIfDefined(body, 'speed', options.speed);
+  const variant = isMicrosoftVallEModel(model)
+    ? 'microsoft'
+    : isAuraModel(model)
+    ? 'aura'
+    : isElevenLabsModel(model)
+    ? 'elevenlabs'
+    : 'generic';
+
+  if (variant === 'microsoft') {
+    const scriptOverride = (options.scriptOverride as string | undefined) ?? '';
+    body.script = scriptOverride ? scriptOverride : input;
+
+    let speakers = options.speakers as IDataObject | IDataObject[] | string | undefined;
+    if (typeof speakers === 'string') {
+      try {
+        const parsed = JSON.parse(speakers);
+        speakers = parsed as IDataObject | IDataObject[] | undefined;
+      } catch {}
+    }
+
+    if (Array.isArray(speakers)) {
+      body.speakers = speakers;
+    } else if (speakers && typeof speakers === 'object') {
+      body.speakers = [speakers];
+    }
+
+    setIfDefined(body, 'seed', options.seed);
+    setIfDefined(body, 'cfg_scale', options.cfgScale);
+  } else {
+    body.text = input;
+  }
+
+  const container =
+    (options.container as string | undefined) ?? (options.audioFormat as string | undefined);
+  const encoding = options.encoding as string | undefined;
+  const sampleRate = options.sampleRate as string | number | undefined;
+
+  if (container) {
+    body.container = container;
+  }
+
+  if (encoding) {
+    body.encoding = encoding;
+  }
+
+  if (sampleRate !== undefined && sampleRate !== null && sampleRate !== '') {
+    body.sample_rate = sampleRate;
+  }
+
+  if (variant === 'elevenlabs' || variant === 'generic') {
+    setIfDefined(body, 'voice', options.voice);
+    setIfDefined(body, 'output_format', options.outputFormat);
+
+    const subtitleOption =
+      options.subtitleEnable ?? options.subtitle ?? options.subtitle_enable ?? options.enableSubtitles;
+    if (subtitleOption !== undefined) {
+      body.subtitle_enable = Boolean(subtitleOption);
+    }
+  }
 
   requestOptions.body = body;
 
