@@ -2,7 +2,6 @@ import type { IDataObject, IExecuteFunctions } from 'n8n-workflow';
 import { createRequestOptions } from './request';
 
 const SUCCESS_STATUSES = new Set(['succeeded', 'success', 'completed', 'done', 'ready', 'finished']);
-const RUNNING_STATUSES = new Set(['queued', 'pending', 'processing', 'running', 'in_progress', 'generating']);
 const FAILURE_STATUSES = new Set(['failed', 'error', 'cancelled', 'canceled', 'timeout', 'timed_out', 'expired']);
 
 const DEFAULT_POLL_INTERVAL = 2000;
@@ -20,6 +19,40 @@ function sleep(duration: number) {
   return new Promise((resolve) => setTimeout(resolve, duration));
 }
 
+function collectObjects(root: unknown): IDataObject[] {
+  const collected: IDataObject[] = [];
+  const visited = new Set<object>();
+  const stack: unknown[] = [root];
+
+  while (stack.length > 0) {
+    const value = stack.pop();
+
+    if (!value || typeof value !== 'object') {
+      continue;
+    }
+
+    if (visited.has(value as object)) {
+      continue;
+    }
+
+    visited.add(value as object);
+
+    if (Array.isArray(value)) {
+      stack.push(...value);
+      continue;
+    }
+
+    const objectValue = value as IDataObject;
+    collected.push(objectValue);
+
+    for (const entry of Object.values(objectValue)) {
+      stack.push(entry as unknown);
+    }
+  }
+
+  return collected;
+}
+
 function normalizeStatus(value: unknown): string | undefined {
   if (typeof value === 'string' && value.trim() !== '') {
     return value.trim().toLowerCase();
@@ -28,148 +61,75 @@ function normalizeStatus(value: unknown): string | undefined {
   return undefined;
 }
 
-function extractStatusFromObject(payload: IDataObject | undefined): string | undefined {
-  if (!payload) {
-    return undefined;
-  }
-
-  const candidates = [
-    payload.status,
-    payload.state,
-    payload.task_status,
-    payload.job_status,
-    payload.stage,
-    payload.task && typeof payload.task === 'object' ? (payload.task as IDataObject).status : undefined,
-  ];
+function extractStatus(payload: unknown): string | undefined {
+  const candidates = collectObjects(payload);
 
   for (const candidate of candidates) {
-    const normalized = normalizeStatus(candidate);
+    const status = normalizeStatus(
+      candidate.status ??
+        candidate.state ??
+        candidate.task_status ??
+        candidate.job_status ??
+        candidate.stage ??
+        (candidate.task && typeof candidate.task === 'object'
+          ? (candidate.task as IDataObject).status
+          : undefined),
+    );
 
-    if (normalized) {
-      return normalized;
+    if (status) {
+      return status;
     }
   }
 
   return undefined;
 }
 
-function getNestedValue(root: IDataObject, path: string[]): unknown {
-  let current: unknown = root;
-
-  for (const segment of path) {
-    if (!current || typeof current !== 'object') {
-      return undefined;
-    }
-
-    current = (current as IDataObject)[segment];
-  }
-
-  return current;
-}
-
-function toDataArray(value: unknown): IDataObject[] {
-  if (Array.isArray(value)) {
-    return value.filter((entry): entry is IDataObject => Boolean(entry) && typeof entry === 'object');
-  }
-
-  if (value && typeof value === 'object') {
-    return [value as IDataObject];
-  }
-
-  return [];
-}
-
-const MEDIA_DATA_PATHS: Record<MediaType, string[][]> = {
-  audio: [
-    ['data'],
-    ['result', 'data'],
-    ['result', 'audios'],
-    ['audios'],
-    ['tracks'],
-    ['output', 'audios'],
-    ['output', 'data'],
-  ],
-  video: [
-    ['data'],
-    ['result', 'data'],
-    ['videos'],
-    ['result', 'videos'],
-    ['output', 'videos'],
-    ['output', 'data'],
-    ['assets'],
-  ],
-};
-
-function normalizeGenerationPayload(payload: IDataObject, mediaType: MediaType): IDataObject {
-  const normalized: IDataObject = { ...payload };
-
-  const paths = MEDIA_DATA_PATHS[mediaType];
-
-  for (const path of paths) {
-    const value = getNestedValue(normalized, path);
-    const data = toDataArray(value);
-
-    if (data.length > 0) {
-      normalized.data = data;
-      break;
-    }
-  }
-
-  return normalized;
-}
-
-function extractGenerationId(payload: IDataObject): string | undefined {
-  const candidates = [
-    payload.generation_id,
-    payload.generationId,
-    payload.id,
-    payload.task_id,
-    payload.taskId,
-    payload.job_id,
-    payload.jobId,
-  ];
+function extractGenerationId(payload: unknown): string | undefined {
+  const candidates = collectObjects(payload);
 
   for (const candidate of candidates) {
-    if (typeof candidate === 'string' && candidate.trim() !== '') {
-      return candidate;
-    }
-  }
+    const ids: Array<unknown> = [
+      candidate.generation_id,
+      candidate.generationId,
+      candidate.id,
+      candidate.task_id,
+      candidate.taskId,
+      candidate.job_id,
+      candidate.jobId,
+    ];
 
-  const data = Array.isArray(payload.data) ? payload.data : [];
-
-  for (const entry of data) {
-    if (!entry || typeof entry !== 'object') {
-      continue;
-    }
-
-    const innerId = extractGenerationId(entry as IDataObject);
-
-    if (innerId) {
-      return innerId;
+    for (const id of ids) {
+      if (typeof id === 'string' && id.trim() !== '') {
+        return id;
+      }
     }
   }
 
   return undefined;
 }
 
-function hasGenerationError(payload: IDataObject): string | undefined {
-  if (typeof payload.error === 'string' && payload.error.trim() !== '') {
-    return payload.error;
-  }
+function extractErrorMessage(payload: unknown): string | undefined {
+  const candidates = collectObjects(payload);
 
-  if (payload.error && typeof payload.error === 'object') {
-    const errorObject = payload.error as IDataObject;
-    const message =
-      (typeof errorObject.message === 'string' && errorObject.message) ||
-      (typeof errorObject.error === 'string' && errorObject.error);
-
-    if (message) {
-      return message;
+  for (const candidate of candidates) {
+    if (typeof candidate.error === 'string' && candidate.error.trim() !== '') {
+      return candidate.error;
     }
-  }
 
-  if (typeof payload.message === 'string' && payload.message.trim() !== '') {
-    return payload.message;
+    if (candidate.error && typeof candidate.error === 'object') {
+      const errorObject = candidate.error as IDataObject;
+      const message =
+        (typeof errorObject.message === 'string' && errorObject.message) ||
+        (typeof errorObject.error === 'string' && errorObject.error);
+
+      if (message) {
+        return message;
+      }
+    }
+
+    if (typeof candidate.message === 'string' && candidate.message.trim() !== '') {
+      return candidate.message;
+    }
   }
 
   return undefined;
@@ -180,19 +140,7 @@ function isSuccessfulStatus(status: string | undefined): boolean {
     return false;
   }
 
-  if (SUCCESS_STATUSES.has(status)) {
-    return true;
-  }
-
-  return false;
-}
-
-function isRunningStatus(status: string | undefined): boolean {
-  if (!status) {
-    return false;
-  }
-
-  return RUNNING_STATUSES.has(status);
+  return SUCCESS_STATUSES.has(status);
 }
 
 function isFailureStatus(status: string | undefined): boolean {
@@ -203,86 +151,248 @@ function isFailureStatus(status: string | undefined): boolean {
   return FAILURE_STATUSES.has(status);
 }
 
+function pushIfMediaObject(target: IDataObject[], candidate: IDataObject) {
+  const url =
+    candidate.url ??
+    candidate.audio_url ??
+    candidate.audioUrl ??
+    candidate.video_url ??
+    candidate.videoUrl;
+  const base64 =
+    candidate.b64_json ??
+    candidate.base64 ??
+    candidate.audio_base64 ??
+    candidate.audioBase64 ??
+    candidate.data ??
+    candidate.bytes;
+
+  if (typeof url === 'string' || typeof base64 === 'string') {
+    target.push(candidate);
+  }
+}
+
+function extractAudioOutputsFromObject(objectValue: IDataObject, outputs: IDataObject[], visited: Set<object>) {
+  if (visited.has(objectValue as object)) {
+    return;
+  }
+
+  visited.add(objectValue as object);
+
+  if (Array.isArray(objectValue)) {
+    for (const entry of objectValue) {
+      if (entry && typeof entry === 'object') {
+        extractAudioOutputsFromObject(entry as IDataObject, outputs, visited);
+      }
+    }
+
+    return;
+  }
+
+  if (objectValue.audio_file && typeof objectValue.audio_file === 'object') {
+    extractAudioOutputsFromObject(objectValue.audio_file as IDataObject, outputs, visited);
+  }
+
+  if (objectValue.audio_files && Array.isArray(objectValue.audio_files)) {
+    for (const entry of objectValue.audio_files) {
+      if (entry && typeof entry === 'object') {
+        extractAudioOutputsFromObject(entry as IDataObject, outputs, visited);
+      }
+    }
+  }
+
+  if (objectValue.audio && typeof objectValue.audio === 'object') {
+    extractAudioOutputsFromObject(objectValue.audio as IDataObject, outputs, visited);
+  }
+
+  if (objectValue.tracks && Array.isArray(objectValue.tracks)) {
+    for (const entry of objectValue.tracks) {
+      if (entry && typeof entry === 'object') {
+        extractAudioOutputsFromObject(entry as IDataObject, outputs, visited);
+      }
+    }
+  }
+
+  if (objectValue.files && Array.isArray(objectValue.files)) {
+    for (const entry of objectValue.files) {
+      if (entry && typeof entry === 'object') {
+        extractAudioOutputsFromObject(entry as IDataObject, outputs, visited);
+      }
+    }
+  }
+
+  if (typeof objectValue.url === 'string' || typeof objectValue.b64_json === 'string' || typeof objectValue.base64 === 'string') {
+    pushIfMediaObject(outputs, objectValue);
+  }
+
+  for (const value of Object.values(objectValue)) {
+    if (value && typeof value === 'object') {
+      extractAudioOutputsFromObject(value as IDataObject, outputs, visited);
+    }
+  }
+}
+
+function extractVideoOutputsFromObject(objectValue: IDataObject, outputs: IDataObject[], visited: Set<object>) {
+  if (visited.has(objectValue as object)) {
+    return;
+  }
+
+  visited.add(objectValue as object);
+
+  if (Array.isArray(objectValue)) {
+    for (const entry of objectValue) {
+      if (entry && typeof entry === 'object') {
+        extractVideoOutputsFromObject(entry as IDataObject, outputs, visited);
+      }
+    }
+
+    return;
+  }
+
+  if (objectValue.video && typeof objectValue.video === 'object') {
+    extractVideoOutputsFromObject(objectValue.video as IDataObject, outputs, visited);
+  }
+
+  if (objectValue.videos && Array.isArray(objectValue.videos)) {
+    for (const entry of objectValue.videos) {
+      if (entry && typeof entry === 'object') {
+        extractVideoOutputsFromObject(entry as IDataObject, outputs, visited);
+      }
+    }
+  }
+
+  if (objectValue.assets && Array.isArray(objectValue.assets)) {
+    for (const entry of objectValue.assets) {
+      if (entry && typeof entry === 'object') {
+        extractVideoOutputsFromObject(entry as IDataObject, outputs, visited);
+      }
+    }
+  }
+
+  if (objectValue.output && typeof objectValue.output === 'object') {
+    extractVideoOutputsFromObject(objectValue.output as IDataObject, outputs, visited);
+  }
+
+  if (typeof objectValue.url === 'string') {
+    pushIfMediaObject(outputs, objectValue);
+  }
+
+  for (const value of Object.values(objectValue)) {
+    if (value && typeof value === 'object') {
+      extractVideoOutputsFromObject(value as IDataObject, outputs, visited);
+    }
+  }
+}
+
+export function extractAudioOutputs(payload: unknown): IDataObject[] {
+  const outputs: IDataObject[] = [];
+  const visited = new Set<object>();
+
+  if (payload && typeof payload === 'object') {
+    extractAudioOutputsFromObject(payload as IDataObject, outputs, visited);
+  }
+
+  return outputs;
+}
+
+export function extractVideoOutputs(payload: unknown): IDataObject[] {
+  const outputs: IDataObject[] = [];
+  const visited = new Set<object>();
+
+  if (payload && typeof payload === 'object') {
+    extractVideoOutputsFromObject(payload as IDataObject, outputs, visited);
+  }
+
+  return outputs;
+}
+
+function hasMediaPayload(payload: unknown, mediaType: MediaType): boolean {
+  if (mediaType === 'audio') {
+    return extractAudioOutputs(payload).length > 0;
+  }
+
+  return extractVideoOutputs(payload).length > 0;
+}
+
+function assertNotFailed(payload: unknown) {
+  const status = extractStatus(payload);
+
+  if (isFailureStatus(status)) {
+    const reason = extractErrorMessage(payload);
+    const suffix = reason ? `: ${reason}` : '';
+    throw new Error(`Generation failed with status "${status}"${suffix}`);
+  }
+}
+
+function shouldPoll(payload: unknown, mediaType: MediaType): { poll: boolean; generationId?: string } {
+  const generationId = extractGenerationId(payload);
+
+  if (!generationId) {
+    return { poll: false };
+  }
+
+  const status = extractStatus(payload);
+  const hasMedia = hasMediaPayload(payload, mediaType);
+
+  assertNotFailed(payload);
+
+  if (isSuccessfulStatus(status) && hasMedia) {
+    return { poll: false, generationId };
+  }
+
+  if (!status && hasMedia) {
+    return { poll: false, generationId };
+  }
+
+  return { poll: true, generationId };
+}
+
 async function pollForGeneration(
   context: IExecuteFunctions,
   baseURL: string,
   path: string,
   generationId: string,
   options: GenerationOptions,
-): Promise<IDataObject> {
+): Promise<unknown> {
   const pollInterval = options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL;
   const maxAttempts = options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
 
+  let latest: unknown;
+
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (attempt > 0) {
+      await sleep(pollInterval);
+    }
+
     const requestOptions = createRequestOptions(baseURL, path, 'GET', {
       qs: { generation_id: generationId },
     });
 
-    const response = (await context.helpers.httpRequestWithAuthentication.call(
-      context,
-      'aimlApi',
-      requestOptions,
-    )) as IDataObject;
+    latest = await context.helpers.httpRequestWithAuthentication.call(context, 'aimlApi', requestOptions);
 
-    const normalized = normalizeGenerationPayload(response, options.mediaType);
-    const status = extractStatusFromObject(normalized);
+    assertNotFailed(latest);
 
-    if (isFailureStatus(status)) {
-      const message = hasGenerationError(normalized);
-      const reason = message ? `: ${message}` : '';
-      throw new Error(`Generation failed with status "${status}"${reason}`);
+    const pollState = shouldPoll(latest, options.mediaType);
+
+    if (!pollState.poll) {
+      return latest;
     }
-
-    if (isSuccessfulStatus(status) || (Array.isArray(normalized.data) && normalized.data.length > 0)) {
-      return normalized;
-    }
-
-    if (!status && Array.isArray(normalized.data) && normalized.data.length > 0) {
-      return normalized;
-    }
-
-    await sleep(pollInterval);
   }
 
-  throw new Error(
-    `Timed out while waiting for generation to complete (generation_id: ${generationId})`,
-  );
+  throw new Error(`Timed out while waiting for generation to complete (generation_id: ${generationId})`);
 }
 
 export async function resolveGenerationResponse(
   context: IExecuteFunctions,
   baseURL: string,
   path: string,
-  initial: IDataObject,
+  initial: unknown,
   options: GenerationOptions,
-): Promise<IDataObject> {
-  const initialNormalized = normalizeGenerationPayload(initial, options.mediaType);
-  const generationId = extractGenerationId(initialNormalized);
-  const initialStatus = extractStatusFromObject(initialNormalized);
+): Promise<unknown> {
+  const pollState = shouldPoll(initial, options.mediaType);
 
-  if (!generationId) {
-    return initialNormalized;
+  if (!pollState.poll || !pollState.generationId) {
+    return initial;
   }
 
-  if (
-    !isRunningStatus(initialStatus) &&
-    Array.isArray(initialNormalized.data) &&
-    initialNormalized.data.length > 0
-  ) {
-    initialNormalized.generation_id = generationId;
-    return initialNormalized;
-  }
-
-  try {
-    const finalResponse = await pollForGeneration(context, baseURL, path, generationId, options);
-
-    if (!finalResponse.generation_id) {
-      finalResponse.generation_id = generationId;
-    }
-
-    return finalResponse;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    throw new Error(`${message}`);
-  }
+  return pollForGeneration(context, baseURL, path, pollState.generationId, options);
 }

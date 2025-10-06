@@ -61,6 +61,56 @@ export const chatCompletionProperties: INodeProperties[] = [
     description: 'Additional parameters for the request',
     options: [
       {
+        displayName: 'Audio Format',
+        name: 'audioFormat',
+        type: 'options',
+        options: [
+          {
+            name: 'MP3',
+            value: 'mp3',
+          },
+          {
+            name: 'OGG (Opus)',
+            value: 'ogg',
+          },
+          {
+            name: 'PCM 16-Bit',
+            value: 'pcm16',
+          },
+          {
+            name: 'WAV',
+            value: 'wav',
+          },
+        ],
+        default: 'wav',
+        description: 'Format to request when audio output is enabled',
+        displayOptions: {
+          show: {
+            audioOutput: [true],
+          },
+        },
+      },
+      {
+        displayName: 'Audio Voice',
+        name: 'audioVoice',
+        type: 'string',
+        default: 'alloy',
+        description: 'Voice to synthesize when requesting audio output',
+        displayOptions: {
+          show: {
+            audioOutput: [true],
+          },
+        },
+      },
+      {
+        displayName: 'Enable Audio Output',
+        name: 'audioOutput',
+        type: 'boolean',
+        default: false,
+        description:
+          'Whether to request an audio response in addition to text (required for GPT-4o audio preview models)',
+      },
+      {
         displayName: 'Frequency Penalty',
         name: 'frequencyPenalty',
         type: 'number',

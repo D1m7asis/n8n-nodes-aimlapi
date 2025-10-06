@@ -2,7 +2,7 @@ import type { IDataObject, INodeExecutionData } from 'n8n-workflow';
 import { createRequestOptions } from '../utils/request';
 import { setIfDefined } from '../utils/object';
 import { getModelEndpoints } from '../utils/models';
-import { resolveGenerationResponse } from '../utils/generation';
+import { extractVideoOutputs, resolveGenerationResponse } from '../utils/generation';
 import type { OperationExecuteContext, VideoExtractOption } from '../types';
 
 function resolveVideoUrl(entry: IDataObject): string | undefined {
@@ -56,11 +56,11 @@ export async function executeVideoGeneration({
     requestOptions,
   )) as IDataObject;
 
-  const response = await resolveGenerationResponse(context, baseURL, generationPath, initialResponse, {
+  const rawResponse = await resolveGenerationResponse(context, baseURL, generationPath, initialResponse, {
     mediaType: 'video',
   });
 
-  const data = (response.data as IDataObject[]) ?? [];
+  const data = extractVideoOutputs(rawResponse);
 
   switch (extract) {
     case 'firstUrl': {
@@ -72,6 +72,6 @@ export async function executeVideoGeneration({
       return { json: { urls } };
     }
     default:
-      return { json: { result: response } };
+      return { json: { result: rawResponse } };
   }
 }

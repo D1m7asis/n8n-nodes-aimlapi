@@ -2,7 +2,7 @@ import type { IDataObject, INodeExecutionData } from 'n8n-workflow';
 import { createRequestOptions } from '../utils/request';
 import { setIfDefined } from '../utils/object';
 import { getModelEndpoints } from '../utils/models';
-import { resolveGenerationResponse } from '../utils/generation';
+import { extractAudioOutputs, resolveGenerationResponse } from '../utils/generation';
 import type { AudioExtractOption, OperationExecuteContext } from '../types';
 
 function resolveAudioUrl(entry: IDataObject): string | undefined {
@@ -18,7 +18,8 @@ function resolveAudioBase64(entry: IDataObject): string | undefined {
     (entry.b64_json as string | undefined) ||
     (entry.base64 as string | undefined) ||
     (entry.audio_base64 as string | undefined) ||
-    (entry.audio as string | undefined)
+    (entry.audio as string | undefined) ||
+    (entry.data as string | undefined)
   );
 }
 
@@ -63,11 +64,11 @@ export async function executeAudioGeneration({
     requestOptions,
   )) as IDataObject;
 
-  const response = await resolveGenerationResponse(context, baseURL, generationPath, initialResponse, {
+  const rawResponse = await resolveGenerationResponse(context, baseURL, generationPath, initialResponse, {
     mediaType: 'audio',
   });
 
-  const data = (response.data as IDataObject[]) ?? [];
+  const data = extractAudioOutputs(rawResponse);
 
   switch (extract) {
     case 'firstUrl': {
@@ -87,6 +88,6 @@ export async function executeAudioGeneration({
       return { json: { base64 } };
     }
     default:
-      return { json: { result: response } };
+      return { json: { result: rawResponse } };
   }
 }
