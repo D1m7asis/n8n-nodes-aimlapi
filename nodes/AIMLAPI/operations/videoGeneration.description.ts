@@ -57,7 +57,7 @@ export const videoGenerationProperties: INodeProperties[] = [
     description: 'Fine-tune the video generation call when supported',
     options: [
       {
-        displayName: 'Aspect Ratio',
+        displayName: 'Aspect Ratio / Ratio',
         name: 'aspectRatio',
         type: 'options',
         options: [
@@ -75,14 +75,14 @@ export const videoGenerationProperties: INodeProperties[] = [
           },
         ],
         default: '16:9',
-        description: 'Desired aspect ratio for the video',
+        description: 'Video aspect ratio for Google Veo, Alibaba Wan, Kling, or Runway',
       },
       {
         displayName: 'Background Audio URL',
         name: 'musicUrl',
         type: 'string',
         default: '',
-        description: 'Optional background soundtrack URL',
+        description: 'Optional background soundtrack URL for legacy providers',
       },
       {
         displayName: 'CFG Scale',
@@ -93,7 +93,7 @@ export const videoGenerationProperties: INodeProperties[] = [
           numberPrecision: 2,
         },
         default: null,
-        description: 'Classifier-free guidance scale (model dependent)',
+        description: 'Classifier-free guidance scale (legacy providers)',
       },
       {
         displayName: 'Duration (Seconds)',
@@ -102,11 +102,77 @@ export const videoGenerationProperties: INodeProperties[] = [
         typeOptions: {
           minValue: 1,
         },
-        default: 6,
-        description: 'Length of the output video clip',
+        default: 5,
+        description: 'Clip length for Google Veo, Kling, or Runway models',
       },
       {
-        displayName: 'Mode',
+        displayName: 'Enable Prompt Expansion (Alibaba)',
+        name: 'enablePromptExpansion',
+        type: 'boolean',
+        default: false,
+        description: 'Toggle Alibaba Wan prompt expansion helper',
+      },
+      {
+        displayName: 'Enhance Prompt (Google Veo)',
+        name: 'enhancePrompt',
+        type: 'boolean',
+        default: false,
+        description: 'Enable prompt enhancement for Google Veo models',
+      },
+      {
+        displayName: 'External Task ID (Kling)',
+        name: 'externalTaskId',
+        type: 'string',
+        default: '',
+        description: 'Attach an external tracking identifier to Kling jobs',
+      },
+      {
+        displayName: 'First Frame Image (MiniMax)',
+        name: 'firstFrameImage',
+        type: 'string',
+        default: '',
+        description: 'First frame image URL for MiniMax Live2D models',
+      },
+      {
+        displayName: 'Image List (Kling)',
+        name: 'imageList',
+        type: 'string',
+        typeOptions: {
+          rows: 4,
+        },
+        default: '',
+        description: 'Provide multiple image URLs for Kling as comma or newline separated values',
+      },
+      {
+        displayName: 'Kling Generation Type',
+        name: 'klingType',
+        type: 'options',
+        options: [
+          {
+            name: 'Text to Video',
+            value: 'text-to-video',
+          },
+          {
+            name: 'Image to Video',
+            value: 'image-to-video',
+          },
+          {
+            name: 'Multi Image to Video',
+            value: 'multi-image-to-video',
+          },
+        ],
+        default: 'multi-image-to-video',
+        description: 'Select Kling workflow type',
+      },
+      {
+        displayName: 'Last Image URL (Runway)',
+        name: 'lastImageUrl',
+        type: 'string',
+        default: '',
+        description: 'Optional last frame reference for Runway Gen-3',
+      },
+      {
+        displayName: 'Mode (Legacy)',
         name: 'mode',
         type: 'options',
         options: [
@@ -124,7 +190,7 @@ export const videoGenerationProperties: INodeProperties[] = [
           },
         ],
         default: 'auto',
-        description: 'Select generation mode for compatible models',
+        description: 'Legacy AIMLAPI parameter for older providers',
       },
       {
         displayName: 'Negative Prompt',
@@ -134,10 +200,17 @@ export const videoGenerationProperties: INodeProperties[] = [
           rows: 3,
         },
         default: '',
-        description: 'Describe what the model should avoid in the scene',
+        description: 'Describe what to avoid (Google Veo, Alibaba Wan, Kling)',
       },
       {
-        displayName: 'Prompt Strength',
+        displayName: 'Prompt Optimizer (MiniMax)',
+        name: 'promptOptimizer',
+        type: 'boolean',
+        default: false,
+        description: 'Enable MiniMax prompt optimizer',
+      },
+      {
+        displayName: 'Prompt Strength (Legacy)',
         name: 'promptStrength',
         type: 'number',
         typeOptions: {
@@ -146,28 +219,63 @@ export const videoGenerationProperties: INodeProperties[] = [
           numberPrecision: 2,
         },
         default: null,
-        description: 'How strongly the video should follow the prompt (0-1)',
+        description: 'Prompt adherence strength for legacy providers',
       },
       {
         displayName: 'Random Seed',
         name: 'seed',
         type: 'number',
         default: null,
-        description: 'Seed for deterministic generations when available',
+        description: 'Seed for deterministic generations (Google Veo, Alibaba Wan, Runway)',
       },
       {
         displayName: 'Reference Image URL',
         name: 'referenceImageUrl',
         type: 'string',
         default: '',
-        description: 'Image URL to guide image-to-video workflows',
+        description: 'Primary reference image for Google Veo, Runway, or MiniMax',
       },
       {
         displayName: 'Reference Video URL',
         name: 'referenceVideoUrl',
         type: 'string',
         default: '',
-        description: 'Video URL for remix or motion guidance when supported',
+        description: 'Reference motion video for legacy providers',
+      },
+      {
+        displayName: 'Resolution (Alibaba)',
+        name: 'resolution',
+        type: 'options',
+        options: [
+          {
+            name: '720p',
+            value: '720P',
+          },
+          {
+            name: '1080p',
+            value: '1080P',
+          },
+          {
+            name: '4K',
+            value: '4K',
+          },
+        ],
+        default: '720P',
+        description: 'Target resolution for Alibaba Wan models',
+      },
+      {
+        displayName: 'Tail Image URL (Google Veo)',
+        name: 'tailImageUrl',
+        type: 'string',
+        default: '',
+        description: 'Tail image for Google Veo or Runway generations',
+      },
+      {
+        displayName: 'Watermark (Alibaba)',
+        name: 'watermark',
+        type: 'boolean',
+        default: false,
+        description: 'Include Alibaba watermark flag',
       },
     ],
   },

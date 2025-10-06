@@ -86,7 +86,7 @@ To use this node, you must configure **AI/ML API** credentials:
 
 * **Prompt** – Describe the scene for the generated video.
 * **Extract From Response** – Return the first/all video URLs or the raw payload.
-* **Video Options** – Control **Aspect Ratio**, **Duration**, **Mode**, **Negative Prompt**, **Prompt Strength**, **Reference Image/Video URLs**, **Background Audio**, **CFG Scale**, and **Seed**.
+* **Video Options** – Control **Aspect Ratio/Ratio**, **Duration**, **Kling Types & Image Lists**, **Google Veo Tail Images & Prompt Enhancement**, **Alibaba Resolution/Watermark/Prompt Expansion**, **MiniMax Prompt Optimizer & First Frame**, **Runway Last Image**, plus legacy toggles like **Negative Prompt**, **Prompt Strength**, **Reference Media**, **Background Audio**, **CFG Scale**, and **Seed**.
 
 #### Speech Synthesis
 
