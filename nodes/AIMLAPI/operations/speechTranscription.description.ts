@@ -2,6 +2,28 @@ import type { INodeProperties } from 'n8n-workflow';
 
 export const speechTranscriptionProperties: INodeProperties[] = [
   {
+    displayName: 'Input Source',
+    name: 'transcriptionInputSource',
+    type: 'options',
+    default: 'binary',
+    displayOptions: {
+      show: {
+        operation: ['speechTranscription'],
+      },
+    },
+    options: [
+      {
+        name: 'Binary File',
+        value: 'binary',
+      },
+      {
+        name: 'Remote URL',
+        value: 'url',
+      },
+    ],
+    description: 'Choose whether to upload audio from the workflow or fetch it from a remote URL',
+  },
+  {
     displayName: 'Binary Property',
     name: 'transcriptionBinaryProperty',
     type: 'string',
@@ -10,9 +32,24 @@ export const speechTranscriptionProperties: INodeProperties[] = [
     displayOptions: {
       show: {
         operation: ['speechTranscription'],
+        transcriptionInputSource: ['binary'],
       },
     },
     description: 'Name of the binary property that contains the audio file',
+  },
+  {
+    displayName: 'Audio URL',
+    name: 'transcriptionAudioUrl',
+    type: 'string',
+    default: '',
+    placeholder: 'https://example.com/sample.mp3',
+    displayOptions: {
+      show: {
+        operation: ['speechTranscription'],
+        transcriptionInputSource: ['url'],
+      },
+    },
+    description: 'Public URL of the audio file to transcribe',
   },
   {
     displayName: 'Extract From Response',
@@ -61,6 +98,56 @@ export const speechTranscriptionProperties: INodeProperties[] = [
         description: 'Language code of the input audio',
       },
       {
+        displayName: 'Custom Intent',
+        name: 'customIntent',
+        type: 'string',
+        default: '',
+        description:
+          'Intent or comma-separated intents for the model to detect in the audio (up to 100 entries)',
+      },
+      {
+        displayName: 'Custom Topic',
+        name: 'customTopic',
+        type: 'string',
+        default: '',
+        description:
+          'Topic or comma-separated topics for the model to detect in the audio (up to 100 entries)',
+      },
+      {
+        displayName: 'Custom Intent Mode',
+        name: 'customIntentMode',
+        type: 'options',
+        default: 'strict',
+        options: [
+          {
+            name: 'Strict',
+            value: 'strict',
+          },
+          {
+            name: 'Extended',
+            value: 'extended',
+          },
+        ],
+        description: 'Control whether intents outside of the custom list can be returned',
+      },
+      {
+        displayName: 'Custom Topic Mode',
+        name: 'customTopicMode',
+        type: 'options',
+        default: 'strict',
+        options: [
+          {
+            name: 'Strict',
+            value: 'strict',
+          },
+          {
+            name: 'Extended',
+            value: 'extended',
+          },
+        ],
+        description: 'Control whether topics outside of the custom list can be returned',
+      },
+      {
         displayName: 'Detect Language',
         name: 'detectLanguage',
         type: 'boolean',
@@ -89,6 +176,13 @@ export const speechTranscriptionProperties: INodeProperties[] = [
         description: 'Enable speaker diarization',
       },
       {
+        displayName: 'Diarize Version',
+        name: 'diarizeVersion',
+        type: 'string',
+        default: '',
+        description: 'Specific diarization model version to use',
+      },
+      {
         displayName: 'Dictation',
         name: 'dictation',
         type: 'boolean',
@@ -115,6 +209,13 @@ export const speechTranscriptionProperties: INodeProperties[] = [
         type: 'string',
         default: '',
         description: 'Comma-separated keywords to boost detection',
+      },
+      {
+        displayName: 'Search Terms',
+        name: 'search',
+        type: 'string',
+        default: '',
+        description: 'Search terms or phrases to match in the audio',
       },
       {
         displayName: 'Measurements',
@@ -198,7 +299,21 @@ export const speechTranscriptionProperties: INodeProperties[] = [
         name: 'uttSplit',
         type: 'number',
         default: 0,
-        description: 'Silence duration threshold between utterances',
+        description: 'Seconds to wait before detecting pauses between words',
+      },
+      {
+        displayName: 'Extra Metadata',
+        name: 'extra',
+        type: 'string',
+        default: '',
+        description: 'Arbitrary metadata to attach to the request',
+      },
+      {
+        displayName: 'Tags',
+        name: 'tags',
+        type: 'string',
+        default: '',
+        description: 'Comma-separated tags to label the request',
       },
     ],
   },
