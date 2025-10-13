@@ -137,7 +137,7 @@ export class AimlApi implements INodeType {
 
 		subtitle:
 			'={{ ({ chatCompletion: "Chat Completion", imageGeneration: "Image Generation", audioGeneration: "Audio Generation", videoGeneration: "Video Generation", speechSynthesis: "Speech Synthesis", speechTranscription: "Speech Transcription", embeddingGeneration: "Embedding Generation" })[$parameter["operation"]] }}',
-                description: 'Choose from 300+ AI models, from Gemini and ChatGPT to DeepSeek and Llama.',
+		description: 'Choose from 300+ AI models, from Gemini and ChatGPT to DeepSeek and Llama.',
 		defaults: {
 			name: 'AI/ML API',
 		},

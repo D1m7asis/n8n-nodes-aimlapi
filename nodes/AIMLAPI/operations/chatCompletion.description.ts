@@ -2,6 +2,19 @@ import type { INodeProperties } from 'n8n-workflow';
 
 export const chatCompletionProperties: INodeProperties[] = [
 	{
+		displayName: 'Use Message List',
+		name: 'useStructuredMessages',
+		type: 'boolean',
+		displayOptions: {
+			show: {
+				operation: ['chatCompletion'],
+			},
+		},
+		default: false,
+		description:
+			'Whether to send a custom sequence of chat messages with explicit roles instead of a single prompt',
+	},
+	{
 		displayName: 'Prompt',
 		name: 'prompt',
 		type: 'string',
@@ -11,11 +24,101 @@ export const chatCompletionProperties: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				operation: ['chatCompletion'],
+				useStructuredMessages: [false],
 			},
 		},
 		default: '',
 		required: true,
 		description: 'Prompt to send to the AI model',
+	},
+	{
+		displayName: 'Messages',
+		name: 'messagesUi',
+		type: 'fixedCollection',
+		placeholder: 'Add Message',
+		typeOptions: {
+			multipleValues: true,
+		},
+		displayOptions: {
+			show: {
+				operation: ['chatCompletion'],
+				useStructuredMessages: [true],
+			},
+		},
+		default: {},
+		description: 'Define the list of chat messages (role and content) to send to the model',
+		options: [
+			{
+				displayName: 'Message',
+				name: 'message',
+				values: [
+					{
+						displayName: 'Role',
+						name: 'role',
+						type: 'options',
+						default: 'system',
+						options: [
+							{
+								name: 'System',
+								value: 'system',
+							},
+							{
+								name: 'User',
+								value: 'user',
+							},
+							{
+								name: 'Assistant',
+								value: 'assistant',
+							},
+							{
+								name: 'Custom…',
+								value: 'custom',
+							},
+						],
+						description:
+							'Select the role for this message; choose Custom to provide a different role name such as "tool" when required by your model',
+					},
+					{
+						displayName: 'Custom Role',
+						name: 'customRole',
+						type: 'string',
+						default: '',
+						placeholder: 'tool',
+						description:
+							'Enter the role name when Custom is selected (for example "tool" or any model-specific role)',
+						displayOptions: {
+							show: {
+								role: ['custom'],
+							},
+						},
+					},
+					{
+						displayName: 'Tool Call ID',
+						name: 'tool_call_id',
+						type: 'string',
+						default: '',
+						placeholder: 'Required for tool responses',
+						description:
+							'When the role is Tool, provide the tool call identifier returned by the assistant',
+						displayOptions: {
+							show: {
+								role: ['custom', 'tool'],
+							},
+						},
+					},
+					{
+						displayName: 'Content',
+						name: 'content',
+						type: 'string',
+						typeOptions: {
+							rows: 4,
+						},
+						default: '',
+						description: 'Text content of the message',
+					},
+				],
+			},
+		],
 	},
 	{
 		displayName: 'Extract From Response',

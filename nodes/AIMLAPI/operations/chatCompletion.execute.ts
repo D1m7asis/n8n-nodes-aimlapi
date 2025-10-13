@@ -1,4 +1,5 @@
 import type { IDataObject, INodeExecutionData } from 'n8n-workflow';
+import { NodeOperationError } from 'n8n-workflow';
 import { createRequestOptions } from '../utils/request';
 import { setIfDefined } from '../utils/object';
 import type { ChatExtractOption, OperationExecuteContext } from '../types';
@@ -74,20 +75,83 @@ export async function executeChatCompletion({
 	baseURL,
 	model,
 }: OperationExecuteContext): Promise<INodeExecutionData> {
-	const prompt = context.getNodeParameter('prompt', itemIndex) as string;
+	const useStructuredMessages = context.getNodeParameter(
+		'useStructuredMessages',
+		itemIndex,
+		false,
+	) as boolean;
 	const extract = context.getNodeParameter('extract', itemIndex) as ChatExtractOption;
 	const options = context.getNodeParameter('options', itemIndex, {}) as IDataObject;
 
 	const requestOptions = createRequestOptions(baseURL, '/v1/chat/completions');
-	const body: IDataObject = {
-		model,
-		messages: [
-			{
-				role: 'user',
-				content: prompt,
-			},
-		],
-	};
+	const body: IDataObject = { model };
+
+	const messages: IDataObject[] = [];
+
+	if (useStructuredMessages) {
+		const messagesUi = context.getNodeParameter('messagesUi', itemIndex, {}) as IDataObject;
+		const structuredMessages = (messagesUi.message as IDataObject[]) ?? [];
+
+		for (const entry of structuredMessages) {
+			const rawRoleSelection = typeof entry.role === 'string' ? entry.role.trim() : '';
+			const normalizedSelection = rawRoleSelection.toLowerCase();
+
+			let role: string;
+
+			if (normalizedSelection === 'custom') {
+				const customRoleRaw = typeof entry.customRole === 'string' ? entry.customRole.trim() : '';
+				role = customRoleRaw !== '' ? customRoleRaw : 'user';
+			} else if (rawRoleSelection !== '') {
+				role = rawRoleSelection;
+			} else {
+				role = 'user';
+			}
+
+			const normalizedRole = role.toLowerCase();
+			const rawContent = typeof entry.content === 'string' ? entry.content : '';
+			const content = rawContent.trim();
+
+			if (!content) {
+				continue;
+			}
+
+			const message: IDataObject = {
+				role,
+				content: rawContent,
+			};
+
+			if (normalizedRole === 'tool') {
+				const toolCallId = typeof entry.tool_call_id === 'string' ? entry.tool_call_id.trim() : '';
+
+				if (!toolCallId) {
+					throw new NodeOperationError(
+						context.getNode(),
+						'Tool messages must include the Tool Call ID returned with the assistant tool invocation.',
+					);
+				}
+
+				message.tool_call_id = toolCallId;
+			}
+
+			messages.push(message);
+		}
+
+		if (messages.length === 0) {
+			throw new NodeOperationError(
+				context.getNode(),
+				'At least one message with content is required when using the message list.',
+			);
+		}
+	} else {
+		const prompt = context.getNodeParameter('prompt', itemIndex) as string;
+
+		messages.push({
+			role: 'user',
+			content: prompt,
+		});
+	}
+
+	body.messages = messages;
 
 	setIfDefined(body, 'temperature', options.temperature);
 	setIfDefined(body, 'top_p', options.topP);
