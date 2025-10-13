@@ -86,7 +86,9 @@ export const chatCompletionProperties: INodeProperties[] = [
                                                 name: 'name',
                                                 type: 'string',
                                                 default: '',
-                                                description: 'Optional name for the entity that sends the message',
+                                                placeholder: 'e.g. weatherTool',
+                                                description:
+                                                        'Optional identifier for the message sender (e.g. tool or function name)',
                                         },
                                         {
                                                 displayName: 'Content',
