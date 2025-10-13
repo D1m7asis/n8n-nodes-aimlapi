@@ -67,7 +67,7 @@ To use this node, you must configure **AI/ML API** credentials:
 #### Chat Completion
 
 - **Use Message List** – Switch between a single prompt and a structured list of chat messages.
-- **Prompt/Messages** – Provide either one prompt or multiple messages with explicit roles (`system`, `user`, `assistant`, `developer`, `tool`). Each structured message also supports an optional **Name** to identify the sender (for example, a tool/function name) along with its text **Content**. When using the `tool` role, fill in the required **Tool Call ID** with the identifier returned alongside the assistant tool invocation so the API can pair the response correctly.
+- **Prompt/Messages** – Provide either one prompt or multiple messages. Each structured message defines a **Role** (`assistant`, `system`, or `user`) or a custom value such as `tool`, plus the text **Content**. When using the `tool` role, fill in the required **Tool Call ID** with the identifier returned alongside the assistant tool invocation so the API can pair the response correctly.
 - **Extract From Response** – Decide what to return (`Text Only`, `Assistant Messages`, `Choices Array`, or `Full Raw JSON`).
 - **Options** – Fine-tune completions with **Temperature**, **Top P**, **Max Tokens**, **Presence Penalty**, **Frequency Penalty**, and **Response Format**.
 

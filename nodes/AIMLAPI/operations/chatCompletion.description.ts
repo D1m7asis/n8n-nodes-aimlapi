@@ -55,40 +55,11 @@ export const chatCompletionProperties: INodeProperties[] = [
                                         {
                                                 displayName: 'Role',
                                                 name: 'role',
-                                                type: 'options',
-                                                options: [
-                                                        {
-                                                                name: 'Assistant',
-                                                                value: 'assistant',
-                                                        },
-                                                        {
-                                                                name: 'Developer',
-                                                                value: 'developer',
-                                                        },
-                                                        {
-                                                                name: 'System',
-                                                                value: 'system',
-                                                        },
-                                                        {
-                                                                name: 'Tool',
-                                                                value: 'tool',
-                                                        },
-                                                        {
-                                                                name: 'User',
-                                                                value: 'user',
-                                                        },
-                                                ],
-                                                default: 'user',
-                                                description: 'Role that the message should have in the conversation',
-                                        },
-                                        {
-                                                displayName: 'Name',
-                                                name: 'name',
                                                 type: 'string',
-                                                default: '',
-                                                placeholder: 'e.g. weatherTool',
+                                                default: 'user',
+                                                placeholder: 'assistant, system, user, tool, …',
                                                 description:
-                                                        'Optional identifier for the message sender (e.g. tool or function name)',
+                                                        'Role that the message should have in the conversation. Use "assistant", "system", or "user" for the built-in roles, or enter a custom value such as "tool" when your model expects it.',
                                         },
                                         {
                                                 displayName: 'Tool Call ID',

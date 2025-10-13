@@ -93,7 +93,9 @@ export async function executeChatCompletion({
                 const structuredMessages = (messagesUi.message as IDataObject[]) ?? [];
 
                 for (const entry of structuredMessages) {
-                        const role = typeof entry.role === 'string' && entry.role.trim() !== '' ? entry.role : 'user';
+                        const rawRole = typeof entry.role === 'string' ? entry.role.trim() : '';
+                        const role = rawRole !== '' ? rawRole : 'user';
+                        const normalizedRole = role.toLowerCase();
                         const rawContent = typeof entry.content === 'string' ? entry.content : '';
                         const content = rawContent.trim();
 
@@ -106,11 +108,7 @@ export async function executeChatCompletion({
                                 content: rawContent,
                         };
 
-                        if (typeof entry.name === 'string' && entry.name.trim() !== '') {
-                                message.name = entry.name.trim();
-                        }
-
-                        if (role === 'tool') {
+                        if (normalizedRole === 'tool') {
                                 const toolCallId =
                                         typeof entry.tool_call_id === 'string' ? entry.tool_call_id.trim() : '';
 
