@@ -93,8 +93,21 @@ export async function executeChatCompletion({
                 const structuredMessages = (messagesUi.message as IDataObject[]) ?? [];
 
                 for (const entry of structuredMessages) {
-                        const rawRole = typeof entry.role === 'string' ? entry.role.trim() : '';
-                        const role = rawRole !== '' ? rawRole : 'user';
+                        const rawRoleSelection = typeof entry.role === 'string' ? entry.role.trim() : '';
+                        const normalizedSelection = rawRoleSelection.toLowerCase();
+
+                        let role: string;
+
+                        if (normalizedSelection === 'custom') {
+                                const customRoleRaw =
+                                        typeof entry.customRole === 'string' ? entry.customRole.trim() : '';
+                                role = customRoleRaw !== '' ? customRoleRaw : 'user';
+                        } else if (rawRoleSelection !== '') {
+                                role = rawRoleSelection;
+                        } else {
+                                role = 'user';
+                        }
+
                         const normalizedRole = role.toLowerCase();
                         const rawContent = typeof entry.content === 'string' ? entry.content : '';
                         const content = rawContent.trim();

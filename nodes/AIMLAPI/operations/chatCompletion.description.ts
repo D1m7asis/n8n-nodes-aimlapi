@@ -55,11 +55,42 @@ export const chatCompletionProperties: INodeProperties[] = [
                                         {
                                                 displayName: 'Role',
                                                 name: 'role',
-                                                type: 'string',
-                                                default: 'user',
-                                                placeholder: 'assistant, system, user, tool, …',
+                                                type: 'options',
+                                                default: 'assistant',
+                                                options: [
+                                                        {
+                                                                name: 'Assistant',
+                                                                value: 'assistant',
+                                                        },
+                                                        {
+                                                                name: 'System',
+                                                                value: 'system',
+                                                        },
+                                                        {
+                                                                name: 'User',
+                                                                value: 'user',
+                                                        },
+                                                        {
+                                                                name: 'Custom…',
+                                                                value: 'custom',
+                                                        },
+                                                ],
                                                 description:
-                                                        'Role that the message should have in the conversation. Use "assistant", "system", or "user" for the built-in roles, or enter a custom value such as "tool" when your model expects it.',
+                                                        'Select the role for this message; choose Custom to provide a different role name such as "tool" when required by your model',
+                                        },
+                                        {
+                                                displayName: 'Custom Role',
+                                                name: 'customRole',
+                                                type: 'string',
+                                                default: '',
+                                                placeholder: 'tool',
+                                                description:
+                                                        'Enter the role name when Custom is selected (for example "tool" or any model-specific role)',
+                                                displayOptions: {
+                                                        show: {
+                                                                role: ['custom'],
+                                                        },
+                                                },
                                         },
                                         {
                                                 displayName: 'Tool Call ID',
@@ -71,7 +102,7 @@ export const chatCompletionProperties: INodeProperties[] = [
                                                         'When the role is Tool, provide the tool call identifier returned by the assistant',
                                                 displayOptions: {
                                                         show: {
-                                                                role: ['tool'],
+                                                                role: ['custom', 'tool'],
                                                         },
                                                 },
                                         },
