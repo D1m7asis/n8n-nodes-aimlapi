@@ -14,8 +14,67 @@ export const chatCompletionProperties: INodeProperties[] = [
 			},
 		},
 		default: '',
-		required: true,
-		description: 'Prompt to send to the AI model',
+		description:
+		'Either enter a single prompt here or configure multiple messages below with specific roles',
+	},
+	{
+		displayName: 'Messages',
+		name: 'messagesUi',
+		type: 'fixedCollection',
+		typeOptions: {
+			multipleValues: true,
+		},
+		placeholder: 'Add Message',
+		displayOptions: {
+			show: {
+				operation: ['chatCompletion'],
+			},
+		},
+		default: {},
+		description: 'Build a structured conversation with individual messages and roles',
+		options: [
+			{
+				displayName: 'Message',
+				name: 'message',
+				values: [
+					{
+						displayName: 'Role',
+						name: 'role',
+						type: 'options',
+						options: [
+							{
+								name: 'System',
+								value: 'system',
+							},
+							{
+								name: 'User',
+								value: 'user',
+							},
+							{
+								name: 'Assistant',
+								value: 'assistant',
+							},
+							{
+								name: 'Tool',
+								value: 'tool',
+							},
+							],
+						default: 'user',
+						description: 'Role of the message in the conversation',
+					},
+					{
+						displayName: 'Content',
+						name: 'content',
+						type: 'string',
+						typeOptions: {
+							rows: 4,
+						},
+						default: '',
+						description: 'Content of the message to send for the specified role',
+					},
+				],
+			},
+		],
 	},
 	{
 		displayName: 'Extract From Response',

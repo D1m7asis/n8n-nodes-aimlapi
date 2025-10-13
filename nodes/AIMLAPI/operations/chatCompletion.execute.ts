@@ -1,4 +1,5 @@
 import type { IDataObject, INodeExecutionData } from 'n8n-workflow';
+import { NodeOperationError } from 'n8n-workflow';
 import { createRequestOptions } from '../utils/request';
 import { setIfDefined } from '../utils/object';
 import type { ChatExtractOption, OperationExecuteContext } from '../types';
@@ -69,25 +70,59 @@ function extractTextFromContent(content: unknown): string {
 
 // Handles the JSON request/response cycle for chat-completion models
 export async function executeChatCompletion({
-	context,
-	itemIndex,
-	baseURL,
-	model,
+        context,
+        itemIndex,
+        baseURL,
+        model,
 }: OperationExecuteContext): Promise<INodeExecutionData> {
-	const prompt = context.getNodeParameter('prompt', itemIndex) as string;
-	const extract = context.getNodeParameter('extract', itemIndex) as ChatExtractOption;
-	const options = context.getNodeParameter('options', itemIndex, {}) as IDataObject;
+        const prompt = context.getNodeParameter('prompt', itemIndex, '') as string;
+        const extract = context.getNodeParameter('extract', itemIndex) as ChatExtractOption;
+        const options = context.getNodeParameter('options', itemIndex, {}) as IDataObject;
+        const messagesUi = context.getNodeParameter('messagesUi', itemIndex, {}) as IDataObject;
 
-	const requestOptions = createRequestOptions(baseURL, '/v1/chat/completions');
-	const body: IDataObject = {
-		model,
-		messages: [
-			{
-				role: 'user',
-				content: prompt,
-			},
-		],
-	};
+        const messageEntries = Array.isArray(messagesUi.message)
+                ? (messagesUi.message as IDataObject[])
+                : [];
+
+        const messages = messageEntries
+                .map((entry) => {
+                        const role = typeof entry.role === 'string' ? entry.role.trim() : '';
+                        const content =
+                                typeof entry.content === 'string' ? entry.content.trim() : '';
+
+                        if (!role || !content) {
+                                return null;
+                        }
+
+                        return {
+                                role,
+                                content,
+                        };
+                })
+                .filter((message): message is { role: string; content: string } => message !== null);
+
+        if (!messages.length) {
+                const trimmedPrompt = prompt.trim();
+
+                if (!trimmedPrompt) {
+                        throw new NodeOperationError(
+                                context.node,
+                                'Either provide a Prompt or add at least one Message entry with content.',
+                                { itemIndex },
+                        );
+                }
+
+                messages.push({
+                        role: 'user',
+                        content: trimmedPrompt,
+                });
+        }
+
+        const requestOptions = createRequestOptions(baseURL, '/v1/chat/completions');
+        const body: IDataObject = {
+                model,
+                messages,
+        };
 
 	setIfDefined(body, 'temperature', options.temperature);
 	setIfDefined(body, 'top_p', options.topP);
