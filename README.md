@@ -66,7 +66,8 @@ To use this node, you must configure **AI/ML API** credentials:
 
 #### Chat Completion
 
-- **Prompt** – User prompt to send to the chat model.
+- **Use Message List** – Switch between a single prompt and a structured list of chat messages.
+- **Prompt/Messages** – Provide either one prompt or multiple messages with explicit roles (`system`, `user`, `assistant`, `developer`, `tool`).
 - **Extract From Response** – Decide what to return (`Text Only`, `Assistant Messages`, `Choices Array`, or `Full Raw JSON`).
 - **Options** – Fine-tune completions with **Temperature**, **Top P**, **Max Tokens**, **Presence Penalty**, **Frequency Penalty**, and **Response Format**.
 

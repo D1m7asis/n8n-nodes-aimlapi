@@ -1,4 +1,5 @@
 import type { IDataObject, INodeExecutionData } from 'n8n-workflow';
+import { NodeOperationError } from 'n8n-workflow';
 import { createRequestOptions } from '../utils/request';
 import { setIfDefined } from '../utils/object';
 import type { ChatExtractOption, OperationExecuteContext } from '../types';
@@ -69,27 +70,67 @@ function extractTextFromContent(content: unknown): string {
 
 // Handles the JSON request/response cycle for chat-completion models
 export async function executeChatCompletion({
-	context,
-	itemIndex,
-	baseURL,
-	model,
+        context,
+        itemIndex,
+        baseURL,
+        model,
 }: OperationExecuteContext): Promise<INodeExecutionData> {
-	const prompt = context.getNodeParameter('prompt', itemIndex) as string;
-	const extract = context.getNodeParameter('extract', itemIndex) as ChatExtractOption;
-	const options = context.getNodeParameter('options', itemIndex, {}) as IDataObject;
+        const useStructuredMessages = context.getNodeParameter(
+                'useStructuredMessages',
+                itemIndex,
+                false,
+        ) as boolean;
+        const extract = context.getNodeParameter('extract', itemIndex) as ChatExtractOption;
+        const options = context.getNodeParameter('options', itemIndex, {}) as IDataObject;
 
-	const requestOptions = createRequestOptions(baseURL, '/v1/chat/completions');
-	const body: IDataObject = {
-		model,
-		messages: [
-			{
-				role: 'user',
-				content: prompt,
-			},
-		],
-	};
+        const requestOptions = createRequestOptions(baseURL, '/v1/chat/completions');
+        const body: IDataObject = { model };
 
-	setIfDefined(body, 'temperature', options.temperature);
+        const messages: IDataObject[] = [];
+
+        if (useStructuredMessages) {
+                const messagesUi = context.getNodeParameter('messagesUi', itemIndex, {}) as IDataObject;
+                const structuredMessages = (messagesUi.message as IDataObject[]) ?? [];
+
+                for (const entry of structuredMessages) {
+                        const role = typeof entry.role === 'string' && entry.role.trim() !== '' ? entry.role : 'user';
+                        const rawContent = typeof entry.content === 'string' ? entry.content : '';
+                        const content = rawContent.trim();
+
+                        if (!content) {
+                                continue;
+                        }
+
+                        const message: IDataObject = {
+                                role,
+                                content: rawContent,
+                        };
+
+                        if (typeof entry.name === 'string' && entry.name.trim() !== '') {
+                                message.name = entry.name.trim();
+                        }
+
+                        messages.push(message);
+                }
+
+                if (messages.length === 0) {
+                        throw new NodeOperationError(
+                                context.getNode(),
+                                'At least one message with content is required when using the message list.',
+                        );
+                }
+        } else {
+                const prompt = context.getNodeParameter('prompt', itemIndex) as string;
+
+                messages.push({
+                        role: 'user',
+                        content: prompt,
+                });
+        }
+
+        body.messages = messages;
+
+        setIfDefined(body, 'temperature', options.temperature);
 	setIfDefined(body, 'top_p', options.topP);
 	setIfDefined(body, 'max_tokens', options.maxTokens);
 	setIfDefined(body, 'frequency_penalty', options.frequencyPenalty);

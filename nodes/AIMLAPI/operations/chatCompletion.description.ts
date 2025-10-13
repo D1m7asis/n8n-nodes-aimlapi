@@ -1,26 +1,111 @@
 import type { INodeProperties } from 'n8n-workflow';
 
 export const chatCompletionProperties: INodeProperties[] = [
-	{
-		displayName: 'Prompt',
-		name: 'prompt',
-		type: 'string',
-		typeOptions: {
-			rows: 4,
-		},
-		displayOptions: {
-			show: {
-				operation: ['chatCompletion'],
-			},
-		},
-		default: '',
-		required: true,
-		description: 'Prompt to send to the AI model',
-	},
-	{
-		displayName: 'Extract From Response',
-		name: 'extract',
-		type: 'options',
+        {
+                displayName: 'Use Message List',
+                name: 'useStructuredMessages',
+                type: 'boolean',
+                displayOptions: {
+                        show: {
+                                operation: ['chatCompletion'],
+                        },
+                },
+                default: false,
+                description:
+                        'Whether to send a custom sequence of chat messages with explicit roles instead of a single prompt',
+        },
+        {
+                displayName: 'Prompt',
+                name: 'prompt',
+                type: 'string',
+                typeOptions: {
+                        rows: 4,
+                },
+                displayOptions: {
+                        show: {
+                                operation: ['chatCompletion'],
+                                useStructuredMessages: [false],
+                        },
+                },
+                default: '',
+                required: true,
+                description: 'Prompt to send to the AI model',
+        },
+        {
+                displayName: 'Messages',
+                name: 'messagesUi',
+                type: 'fixedCollection',
+                placeholder: 'Add Message',
+                typeOptions: {
+                        multipleValues: true,
+                },
+                displayOptions: {
+                        show: {
+                                operation: ['chatCompletion'],
+                                useStructuredMessages: [true],
+                        },
+                },
+                default: {},
+                description: 'Define the list of chat messages (role and content) to send to the model',
+                options: [
+                        {
+                                displayName: 'Message',
+                                name: 'message',
+                                values: [
+                                        {
+                                                displayName: 'Role',
+                                                name: 'role',
+                                                type: 'options',
+                                                options: [
+                                                        {
+                                                                name: 'Assistant',
+                                                                value: 'assistant',
+                                                        },
+                                                        {
+                                                                name: 'Developer',
+                                                                value: 'developer',
+                                                        },
+                                                        {
+                                                                name: 'System',
+                                                                value: 'system',
+                                                        },
+                                                        {
+                                                                name: 'Tool',
+                                                                value: 'tool',
+                                                        },
+                                                        {
+                                                                name: 'User',
+                                                                value: 'user',
+                                                        },
+                                                ],
+                                                default: 'user',
+                                                description: 'Role that the message should have in the conversation',
+                                        },
+                                        {
+                                                displayName: 'Name',
+                                                name: 'name',
+                                                type: 'string',
+                                                default: '',
+                                                description: 'Optional name for the entity that sends the message',
+                                        },
+                                        {
+                                                displayName: 'Content',
+                                                name: 'content',
+                                                type: 'string',
+                                                typeOptions: {
+                                                        rows: 4,
+                                                },
+                                                default: '',
+                                                description: 'Text content of the message',
+                                        },
+                                ],
+                        },
+                ],
+        },
+        {
+                displayName: 'Extract From Response',
+                name: 'extract',
+                type: 'options',
 		displayOptions: {
 			show: {
 				operation: ['chatCompletion'],
