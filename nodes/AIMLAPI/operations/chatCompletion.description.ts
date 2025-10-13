@@ -91,6 +91,20 @@ export const chatCompletionProperties: INodeProperties[] = [
                                                         'Optional identifier for the message sender (e.g. tool or function name)',
                                         },
                                         {
+                                                displayName: 'Tool Call ID',
+                                                name: 'tool_call_id',
+                                                type: 'string',
+                                                default: '',
+                                                placeholder: 'Required for tool responses',
+                                                description:
+                                                        'When the role is Tool, provide the tool call identifier returned by the assistant',
+                                                displayOptions: {
+                                                        show: {
+                                                                role: ['tool'],
+                                                        },
+                                                },
+                                        },
+                                        {
                                                 displayName: 'Content',
                                                 name: 'content',
                                                 type: 'string',

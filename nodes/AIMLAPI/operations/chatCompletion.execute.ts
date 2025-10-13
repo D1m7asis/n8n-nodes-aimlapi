@@ -110,6 +110,20 @@ export async function executeChatCompletion({
                                 message.name = entry.name.trim();
                         }
 
+                        if (role === 'tool') {
+                                const toolCallId =
+                                        typeof entry.tool_call_id === 'string' ? entry.tool_call_id.trim() : '';
+
+                                if (!toolCallId) {
+                                        throw new NodeOperationError(
+                                                context.getNode(),
+                                                'Tool messages must include the Tool Call ID returned with the assistant tool invocation.',
+                                        );
+                                }
+
+                                message.tool_call_id = toolCallId;
+                        }
+
                         messages.push(message);
                 }
 
