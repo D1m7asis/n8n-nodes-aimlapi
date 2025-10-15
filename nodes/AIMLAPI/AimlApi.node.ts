@@ -1,14 +1,131 @@
-import {
-	IExecuteSingleFunctions,
-	IHttpRequestOptions,
+import type {
+	IDataObject,
+	IExecuteFunctions,
 	ILoadOptionsFunctions,
-	IN8nHttpFullResponse,
 	INodeExecutionData,
+	INodeProperties,
 	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import {NodeConnectionType} from 'n8n-workflow/dist/Interfaces';
+import { NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionType } from 'n8n-workflow/dist/Interfaces';
+import { chatCompletionProperties } from './operations/chatCompletion.description';
+import { imageGenerationProperties } from './operations/imageGeneration.description';
+import { audioGenerationProperties } from './operations/audioGeneration.description';
+import { videoGenerationProperties } from './operations/videoGeneration.description';
+import { speechSynthesisProperties } from './operations/speechSynthesis.description';
+import { speechTranscriptionProperties } from './operations/speechTranscription.description';
+import { embeddingGenerationProperties } from './operations/embeddingGeneration.description';
+import { executeChatCompletion } from './operations/chatCompletion.execute';
+import { executeImageGeneration } from './operations/imageGeneration.execute';
+import { executeAudioGeneration } from './operations/audioGeneration.execute';
+import { executeVideoGeneration } from './operations/videoGeneration.execute';
+import { executeSpeechSynthesis } from './operations/speechSynthesis.execute';
+import { executeSpeechTranscription } from './operations/speechTranscription.execute';
+import { executeEmbeddingGeneration } from './operations/embeddingGeneration.execute';
+import type { Operation, OperationExecuteContext } from './types';
+import { toModelOptions } from './utils/models';
+
+const operationLabels: Record<Operation, string> = {
+	chatCompletion: 'Chat Completion',
+	imageGeneration: 'Image Generation',
+	audioGeneration: 'Audio Generation',
+	videoGeneration: 'Video Generation',
+	speechSynthesis: 'Speech Synthesis',
+	speechTranscription: 'Speech Transcription',
+	embeddingGeneration: 'Embedding Generation',
+};
+
+const operationExecutors: Record<
+	Operation,
+	(context: OperationExecuteContext) => Promise<INodeExecutionData>
+> = {
+	chatCompletion: executeChatCompletion,
+	imageGeneration: executeImageGeneration,
+	audioGeneration: executeAudioGeneration,
+	videoGeneration: executeVideoGeneration,
+	speechSynthesis: executeSpeechSynthesis,
+	speechTranscription: executeSpeechTranscription,
+	embeddingGeneration: executeEmbeddingGeneration,
+};
+
+const operationSpecificProperties: INodeProperties[] = [
+	...chatCompletionProperties,
+	...imageGenerationProperties,
+	...audioGenerationProperties,
+	...videoGenerationProperties,
+	...speechSynthesisProperties,
+	...speechTranscriptionProperties,
+	...embeddingGenerationProperties,
+];
+
+const baseProperties: INodeProperties[] = [
+	{
+		displayName: 'Operation',
+		name: 'operation',
+		type: 'options',
+		noDataExpression: true,
+		options: [
+			{
+				name: operationLabels.chatCompletion,
+				value: 'chatCompletion',
+				action: 'Generate text using chat completion models',
+				description: 'Generate text using chat completion models',
+			},
+			{
+				name: operationLabels.imageGeneration,
+				value: 'imageGeneration',
+				action: 'Generate images from text prompts',
+				description: 'Generate images from text prompts',
+			},
+			{
+				name: operationLabels.audioGeneration,
+				value: 'audioGeneration',
+				action: 'Generate music or sound effects from text prompts',
+				description: 'Generate music or sound effects from text prompts',
+			},
+			{
+				name: operationLabels.videoGeneration,
+				value: 'videoGeneration',
+				action: 'Generate videos from prompts or reference media',
+				description: 'Generate videos from prompts or reference media',
+			},
+			{
+				name: operationLabels.speechSynthesis,
+				value: 'speechSynthesis',
+				action: 'Convert text into speech audio',
+				description: 'Convert text into speech audio',
+			},
+			{
+				name: operationLabels.speechTranscription,
+				value: 'speechTranscription',
+				action: 'Transcribe audio files into text',
+				description: 'Transcribe audio files into text',
+			},
+			{
+				name: operationLabels.embeddingGeneration,
+				value: 'embeddingGeneration',
+				action: 'Create vector embeddings from text',
+				description: 'Create vector embeddings from text',
+			},
+		],
+		default: 'chatCompletion',
+	},
+	{
+		displayName: 'Model Name or ID',
+		name: 'model',
+		type: 'options',
+		typeOptions: {
+			loadOptionsMethod: 'getModels',
+			loadOptionsDependsOn: ['operation'],
+		},
+		default: '',
+		required: true,
+		description:
+			'Choose model or specify an ID using an expression. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+	},
+];
 
 export class AimlApi implements INodeType {
 	description: INodeTypeDescription = {
@@ -17,9 +134,12 @@ export class AimlApi implements INodeType {
 		icon: 'file:aimlapi.svg',
 		group: ['transform'],
 		version: 1,
-		description: 'Choose from 300+ AI models from Gemini and ChatGPT to DeepSeek and Llama.',
+
+		subtitle:
+			'={{ ({ chatCompletion: "Chat Completion", imageGeneration: "Image Generation", audioGeneration: "Audio Generation", videoGeneration: "Video Generation", speechSynthesis: "Speech Synthesis", speechTranscription: "Speech Transcription", embeddingGeneration: "Embedding Generation" })[$parameter["operation"]] }}',
+		description: 'Choose from 300+ AI models, from Gemini and ChatGPT to DeepSeek and Llama.',
 		defaults: {
-			name: 'AI/ML Chat Completion',
+			name: 'AI/ML API',
 		},
 		inputs: [NodeConnectionType.Main],
 		outputs: [NodeConnectionType.Main],
@@ -30,231 +150,82 @@ export class AimlApi implements INodeType {
 			},
 		],
 		requestDefaults: {
-			baseURL: '={{ $credentials.url.endsWith("/") ? $credentials.url.slice(0, -1) : $credentials.url }}',
+			baseURL:
+				'={{ $credentials.url.endsWith("/") ? $credentials.url.slice(0, -1) : $credentials.url }}',
 			headers: {
 				'Content-Type': 'application/json',
 				'X-Title': `n8n AIMLAPI Node`,
 			},
 		},
-		properties: [
-			{
-				displayName: 'Model Name or ID',
-				name: 'model',
-				type: 'options',
-				typeOptions: {
-					loadOptionsMethod: 'getModels',
-				},
-				default: '',
-				required: true,
-				description: 'Choose model or specify an ID using an expression. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
-			},
-			{
-				displayName: 'Prompt',
-				name: 'prompt',
-				type: 'string',
-				typeOptions: {
-					rows: 4,
-				},
-				default: '',
-				required: true,
-				description: 'Prompt to send to the AI model',
-				routing: {
-					request: {
-						method: 'POST',
-						url: '/chat/completions',
-						body: {
-							model: '={{ $parameter["model"] }}',
-							messages: [
-								{
-									role: 'user',
-									content: '={{ $value }}',
-								},
-							],
-							temperature: '={{ $parameter["options"]["temperature"] ?? undefined }}',
-							max_tokens: '={{ $parameter["options"]["maxTokens"] ?? undefined }}',
-							top_p: '={{ $parameter["options"]["topP"] ?? undefined }}',
-							frequency_penalty: '={{ $parameter["options"]["frequencyPenalty"] ?? undefined }}',
-							presence_penalty: '={{ $parameter["options"]["presencePenalty"] ?? undefined }}',
-							response_format:
-								'={{ $parameter["options"]["responseFormat"] === "text" ? {"type": "text"} : undefined }}',
-						},
-					},
-					output: {
-						postReceive: [
-							async function (
-								this: IExecuteSingleFunctions,
-								items: INodeExecutionData[],
-								response: IN8nHttpFullResponse
-							): Promise<INodeExecutionData[]> {
-								const extract = this.getNodeParameter('extract', 0) as string;
-
-								const body = response.body as {
-									choices?: Array<{
-										message?: { content?: string };
-									}>;
-									[key: string]: any;
-								};
-
-								if (extract === 'text') {
-									const content = body.choices?.[0]?.message?.content ?? '';
-									return this.helpers.returnJsonArray([{content}]);
-								}
-
-								if (extract === 'messages') {
-									const messages = body.choices?.map(c => c.message) ?? [];
-									return this.helpers.returnJsonArray([{result: messages}]);
-								}
-
-								if (extract === 'choices') {
-									return this.helpers.returnJsonArray([{result: body.choices ?? []}]);
-								}
-
-								// default fallback: raw
-								return this.helpers.returnJsonArray([{result: body}]);
-							}
-						],
-					},
-				},
-			},
-			{
-				displayName: 'Extract From Response',
-				name: 'extract',
-				type: 'options',
-				default: 'text',
-
-				description: 'Choose what part of the response to return',
-				options: [
-					{
-						name: 'Text Only (First Message)',
-						value: 'text',
-					},
-					{
-						name: 'Assistant Messages',
-						value: 'messages',
-					},
-					{
-						name: 'Choices Array',
-						value: 'choices',
-					},
-					{
-						name: 'Full Raw JSON',
-						value: 'raw',
-					},
-				],
-			},
-			{
-				displayName: 'Options',
-				name: 'options',
-				type: 'collection',
-				placeholder: 'Add Option',
-				default: {},
-				description: 'Additional parameters for the request',
-				options: [
-					{
-						displayName: 'Frequency Penalty',
-						name: 'frequencyPenalty',
-						type: 'number',
-						default: null,
-						typeOptions: {
-							minValue: -2,
-							maxValue: 2,
-							numberPrecision: 2,
-						},
-						description: 'Penalty for repeated tokens (range -2 to 2)',
-					},
-					{
-						displayName: 'Max Tokens',
-						name: 'maxTokens',
-						type: 'number',
-						default: null,
-						description: 'Maximum number of tokens to generate',
-					},
-					{
-						displayName: 'Presence Penalty',
-						name: 'presencePenalty',
-						type: 'number',
-						default: null,
-						typeOptions: {
-							minValue: -2,
-							maxValue: 2,
-							numberPrecision: 2,
-						},
-						description: 'Penalty for new topics (range -2 to 2)',
-					},
-					{
-						displayName: 'Response Format',
-						name: 'responseFormat',
-						type: 'options',
-						options: [
-							{
-								name: 'Default (Full JSON)',
-								value: 'default',
-							},
-							{
-								name: 'Text Only',
-								value: 'text',
-							},
-						],
-						default: 'default',
-					},
-					{
-						displayName: 'Temperature',
-						name: 'temperature',
-						type: 'number',
-						default: 1,
-						typeOptions: {
-							minValue: 0,
-							maxValue: 2,
-							numberPrecision: 2,
-						},
-						description: 'Sampling temperature (0-2)',
-					},
-					{
-						displayName: 'Top P',
-						name: 'topP',
-						type: 'number',
-						default: 1,
-						typeOptions: {
-							minValue: 0,
-							maxValue: 1,
-							numberPrecision: 2,
-						},
-						description: 'Nucleus sampling (alternative to temperature)',
-					},
-				],
-			},
-		],
+		properties: [...baseProperties, ...operationSpecificProperties],
 	};
+
+	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
+		const items = this.getInputData();
+		const returnItems: INodeExecutionData[] = [];
+
+		const credentials = await this.getCredentials('aimlApi');
+		const rawBaseUrl = (credentials.url as string) ?? '';
+		const baseURL = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
+
+		for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
+			try {
+				const operation = this.getNodeParameter('operation', itemIndex) as Operation;
+				const model = this.getNodeParameter('model', itemIndex) as string;
+
+				const context: OperationExecuteContext = {
+					context: this,
+					itemIndex,
+					baseURL,
+					model,
+				};
+
+				const executor = operationExecutors[operation];
+
+				if (!executor) {
+					throw new NodeOperationError(this.getNode(), `Unsupported operation: ${operation}`);
+				}
+
+				// Delegate the heavy lifting to the operation-specific executor
+				const result = await executor(context);
+
+				returnItems.push(result);
+			} catch (error) {
+				if (this.continueOnFail()) {
+					returnItems.push({
+						json: {
+							error: error instanceof Error ? error.message : (error as IDataObject),
+						},
+					});
+					continue;
+				}
+
+				throw error;
+			}
+		}
+
+		return [returnItems];
+	}
 
 	methods = {
 		loadOptions: {
 			async getModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const credentials = await this.getCredentials('aimlApi');
 				const apiUrl = credentials.url as string;
-				const endpoint = apiUrl.endsWith('/')
-					? `${apiUrl}models`
-					: `${apiUrl}/models`;
+				const endpoint = apiUrl.endsWith('/') ? `${apiUrl}models` : `${apiUrl}/models`;
 
-				const options: IHttpRequestOptions = {
+				const response = await this.helpers.httpRequestWithAuthentication.call(this, 'aimlApi', {
 					method: 'GET',
 					url: endpoint,
 					json: true,
-				};
-
-				const response = await this.helpers.httpRequestWithAuthentication.call(
-					this,
-					'aimlApi',
-					options
-				);
+				});
 
 				const models = response?.models ?? response?.data ?? response;
+				const operation =
+					(this.getCurrentNodeParameter('operation') as Operation) ?? 'chatCompletion';
 
-				return (models as any[])
-					.filter((model) => model.type === 'chat-completion')
-					.map((model) => ({
-						name: model.info?.name || model.name || model.id,
-						value: model.id,
-					}));
+				// Filter the available models so the list stays relevant for the selected operation
+				return toModelOptions(models, operation);
 			},
 		},
 	};

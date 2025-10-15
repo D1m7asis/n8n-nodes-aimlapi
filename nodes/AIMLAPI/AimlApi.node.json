@@ -2,7 +2,9 @@
 	"node": "n8n-nodes-base.AimlApi",
 	"nodeVersion": "1.0",
 	"codexVersion": "1.0",
-	"categories": ["Utility"],
+	"categories": [
+		"Utility"
+	],
 	"resources": {
 		"credentialDocumentation": [
 			{
@@ -14,5 +16,43 @@
 				"url": "https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-aimlapi.aimlapi/"
 			}
 		]
-	}
+	},
+	"alias": [
+		"AI/ML API",
+		"AI/ML Text Generation",
+		"AI/ML Chat Completion",
+		"AI/ML Code Generation",
+		"AI/ML Translation",
+		"AI/ML Summarization",
+		"AI/ML Instruction Following",
+		"AI/ML Image Generation",
+		"AI/ML Image-to-Image",
+		"AI/ML Text-to-Image",
+		"AI/ML Speech-to-Text",
+		"AI/ML Text-to-Speech",
+		"AI/ML Audio Generation",
+		"AI/ML Audio-to-Audio",
+		"AI/ML Video Generation",
+		"AI/ML Text-to-Video",
+		"AI/ML Image-to-Video",
+		"AI/ML 3D Generation",
+		"AI/ML Text-to-3D",
+		"AI/ML Image-to-3D",
+		"AI/ML Embeddings",
+		"AI/ML Search",
+		"AI/ML Content Moderation",
+		"AI/ML OCR",
+		"AI/ML Doc-to-Text",
+		"AI/ML Image-Text-to-Text",
+		"AI/ML Provider",
+		"Image Generation",
+		"Text Generation",
+		"Speech Synthesis",
+		"Speech Transcription",
+		"Video Generation",
+		"Embeddings",
+		"AI Assistant",
+		"LLM",
+		"RAG"
+	]
 }

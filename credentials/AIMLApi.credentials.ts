@@ -10,7 +10,8 @@ export class AIMLApi implements ICredentialType {
 
 	displayName = 'AI/ML API';
 
-	documentationUrl = 'https://docs.aimlapi.com/?utm_source=n8n&utm_medium=github&utm_campaign=integration';
+	documentationUrl =
+		'https://docs.aimlapi.com/?utm_source=n8n&utm_medium=github&utm_campaign=integration';
 
 	properties: INodeProperties[] = [
 		{
