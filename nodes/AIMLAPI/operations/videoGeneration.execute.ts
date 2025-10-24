@@ -183,13 +183,16 @@ export async function executeVideoGeneration({
 	switch (extract) {
 		case 'firstUrl': {
 			const url = data.map(resolveVideoUrl).find((value): value is string => Boolean(value)) ?? '';
-			return { json: { url } };
+			return { json: { url }, pairedItem: { item: itemIndex } };
 		}
 		case 'allUrls': {
 			const urls = data.map(resolveVideoUrl).filter((value): value is string => Boolean(value));
-			return { json: { urls } };
+			return { json: { urls }, pairedItem: { item: itemIndex } };
 		}
 		default:
-			return { json: { result: rawResponse } as IDataObject };
+			return {
+				json: { result: rawResponse } as IDataObject,
+				pairedItem: { item: itemIndex },
+			};
 	}
 }

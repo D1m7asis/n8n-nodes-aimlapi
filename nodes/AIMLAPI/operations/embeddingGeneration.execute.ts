@@ -36,15 +36,15 @@ export async function executeEmbeddingGeneration({
 
 	if (extract === 'vector') {
 		const embedding = (data[0]?.embedding as Array<number | string> | undefined) ?? [];
-		return { json: { embedding } };
+		return { json: { embedding }, pairedItem: { item: itemIndex } };
 	}
 
 	if (extract === 'vectors') {
 		const embeddings = data
 			.map((entry) => entry.embedding as Array<number | string> | undefined)
 			.filter((value): value is Array<number | string> => Array.isArray(value));
-		return { json: { embeddings } };
+		return { json: { embeddings }, pairedItem: { item: itemIndex } };
 	}
 
-	return { json: { result: response } };
+	return { json: { result: response }, pairedItem: { item: itemIndex } };
 }

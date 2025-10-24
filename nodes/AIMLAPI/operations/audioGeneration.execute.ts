@@ -78,24 +78,27 @@ export async function executeAudioGeneration({
 	switch (extract) {
 		case 'firstUrl': {
 			const url = data.map(resolveAudioUrl).find((value): value is string => Boolean(value)) ?? '';
-			return { json: { url } };
+			return { json: { url }, pairedItem: { item: itemIndex } };
 		}
 		case 'allUrls': {
 			const urls = data.map(resolveAudioUrl).filter((value): value is string => Boolean(value));
-			return { json: { urls } };
+			return { json: { urls }, pairedItem: { item: itemIndex } };
 		}
 		case 'firstBase64': {
 			const base64 =
 				data.map(resolveAudioBase64).find((value): value is string => Boolean(value)) ?? '';
-			return { json: { base64 } };
+			return { json: { base64 }, pairedItem: { item: itemIndex } };
 		}
 		case 'allBase64': {
 			const base64 = data
 				.map(resolveAudioBase64)
 				.filter((value): value is string => Boolean(value));
-			return { json: { base64 } };
+			return { json: { base64 }, pairedItem: { item: itemIndex } };
 		}
 		default:
-			return { json: { result: rawResponse } as IDataObject };
+			return {
+				json: { result: rawResponse } as IDataObject,
+				pairedItem: { item: itemIndex },
+			};
 	}
 }

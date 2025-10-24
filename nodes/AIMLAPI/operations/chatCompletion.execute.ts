@@ -210,18 +210,18 @@ export async function executeChatCompletion({
 				}
 			}
 
-			return { json: { content } };
+			return { json: { content }, pairedItem: { item: itemIndex } };
 		}
 		case 'messages': {
 			const messages = choices
 				.map((choice) => choice.message as IDataObject | undefined)
 				.filter((message): message is IDataObject => Boolean(message));
-			return { json: { result: messages } };
+			return { json: { result: messages }, pairedItem: { item: itemIndex } };
 		}
 		case 'choices': {
-			return { json: { result: choices } };
+			return { json: { result: choices }, pairedItem: { item: itemIndex } };
 		}
 		default:
-			return { json: { result: response } };
+			return { json: { result: response }, pairedItem: { item: itemIndex } };
 	}
 }

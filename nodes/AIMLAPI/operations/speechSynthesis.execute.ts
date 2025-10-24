@@ -138,13 +138,13 @@ export async function executeSpeechSynthesis({
 	switch (extract) {
 		case 'audioUrl': {
 			const url = pickFirstUrl(response) ?? '';
-			return { json: { url } };
+			return { json: { url }, pairedItem: { item: itemIndex } };
 		}
 		case 'audioBase64': {
 			const base64 = pickFirstBase64(response) ?? '';
-			return { json: { base64 } };
+			return { json: { base64 }, pairedItem: { item: itemIndex } };
 		}
 		default:
-			return { json: { result: response } };
+			return { json: { result: response }, pairedItem: { item: itemIndex } };
 	}
 }

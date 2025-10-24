@@ -42,25 +42,25 @@ export async function executeImageGeneration({
 	switch (extract) {
 		case 'firstUrl': {
 			const url = data.find((entry) => typeof entry.url === 'string')?.url ?? '';
-			return { json: { url } };
+			return { json: { url }, pairedItem: { item: itemIndex } };
 		}
 		case 'allUrls': {
 			const urls = data
 				.map((entry) => entry.url as string | undefined)
 				.filter((url): url is string => Boolean(url));
-			return { json: { urls } };
+			return { json: { urls }, pairedItem: { item: itemIndex } };
 		}
 		case 'firstBase64': {
 			const base64 = data.find((entry) => typeof entry.b64_json === 'string')?.b64_json ?? '';
-			return { json: { base64 } };
+			return { json: { base64 }, pairedItem: { item: itemIndex } };
 		}
 		case 'allBase64': {
 			const base64 = data
 				.map((entry) => entry.b64_json as string | undefined)
 				.filter((value): value is string => Boolean(value));
-			return { json: { base64 } };
+			return { json: { base64 }, pairedItem: { item: itemIndex } };
 		}
 		default:
-			return { json: { result: response } };
+			return { json: { result: response }, pairedItem: { item: itemIndex } };
 	}
 }

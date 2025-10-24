@@ -1,4 +1,4 @@
-import FormData from 'form-data';
+import { randomBytes } from 'crypto';
 import type { IDataObject, INodeExecutionData } from 'n8n-workflow';
 import { createRequestOptions } from '../utils/request';
 import type { OperationExecuteContext, SpeechTranscriptionExtractOption } from '../types';
@@ -9,6 +9,65 @@ const POLL_INTERVAL_MS = 5000;
 const MAX_POLL_ATTEMPTS = 120;
 
 type InputSource = 'binary' | 'url';
+
+type MultipartValue = string | Buffer;
+
+interface MultipartPart {
+	name: string;
+	value: MultipartValue;
+	filename?: string;
+	contentType?: string;
+}
+
+class MultipartFormBuilder {
+	private readonly parts: MultipartPart[] = [];
+
+	append(
+		name: string,
+		value: MultipartValue,
+		options: { filename?: string; contentType?: string } = {},
+	) {
+		this.parts.push({ name, value, ...options });
+	}
+
+	build(): { body: Buffer; headers: Record<string, string> } {
+		const boundary = `----n8n-aimlapi-${randomBytes(16).toString('hex')}`;
+		const chunks: Buffer[] = [];
+
+		for (const part of this.parts) {
+			const headerLines: string[] = [];
+			const safeName = part.name.replace(/"/g, '\\"');
+			let disposition = `form-data; name="${safeName}"`;
+
+			if (part.filename) {
+				const safeFilename = part.filename.replace(/"/g, '\\"');
+				disposition += `; filename="${safeFilename}"`;
+			}
+
+			headerLines.push(`Content-Disposition: ${disposition}`);
+
+			if (part.contentType) {
+				headerLines.push(`Content-Type: ${part.contentType}`);
+			}
+
+			chunks.push(Buffer.from(`--${boundary}\r\n${headerLines.join('\r\n')}\r\n\r\n`, 'utf8'));
+			chunks.push(typeof part.value === 'string' ? Buffer.from(part.value, 'utf8') : part.value);
+			chunks.push(Buffer.from('\r\n', 'utf8'));
+		}
+
+		chunks.push(Buffer.from(`--${boundary}--\r\n`, 'utf8'));
+
+		const body = Buffer.concat(chunks);
+
+		return {
+			body,
+			headers: {
+				'Content-Type': `multipart/form-data; boundary=${boundary}`,
+				'Content-Length': body.length.toString(),
+			},
+		};
+	}
+}
 
 function sleep(duration: number) {
 	return new Promise<void>((resolve) => {
@@ -109,7 +168,7 @@ function applyOptionsToJson(target: IDataObject, options: IDataObject) {
 	}
 }
 
-function applyOptionsToForm(form: FormData, options: IDataObject) {
+function applyOptionsToForm(form: MultipartFormBuilder, options: IDataObject) {
 	const appendList = (key: string, sourceKey: keyof IDataObject) => {
 		const values = toList(options[sourceKey]);
 
@@ -426,7 +485,7 @@ export async function executeSpeechTranscription({
 		const binaryData = await context.helpers.getBinaryDataBuffer(itemIndex, binaryPropertyName);
 		const binaryMetadata = context.helpers.assertBinaryData(itemIndex, binaryPropertyName);
 
-		const form = new FormData();
+		const form = new MultipartFormBuilder();
 		form.append('model', model);
 
 		const filename = binaryMetadata.fileName ?? `audio.${binaryMetadata.fileExtension ?? 'wav'}`;
@@ -435,16 +494,17 @@ export async function executeSpeechTranscription({
 		form.append('audio', binaryData, {
 			filename,
 			contentType,
-			knownLength: binaryData.length,
 		});
 
 		applyOptionsToForm(form, options);
 
+		const { body: formBody, headers } = form.build();
+
 		const requestOptions = createRequestOptions(baseURL, '/v1/stt/create', 'POST', {
 			json: false,
-			headers: form.getHeaders(),
+			headers,
 		});
-		requestOptions.body = form;
+		requestOptions.body = formBody;
 
 		creationResponse = (await context.helpers.httpRequestWithAuthentication.call(
 			context,
@@ -461,16 +521,16 @@ export async function executeSpeechTranscription({
 	const finalResponse = await pollForTranscription(context, baseURL, generationId);
 
 	if (extract === 'raw') {
-		return { json: { result: finalResponse } };
+		return { json: { result: finalResponse }, pairedItem: { item: itemIndex } };
 	}
 
 	const resultPayload = getResultPayload(finalResponse);
 
 	if (extract === 'segments') {
 		const segments = extractSegments(resultPayload);
-		return { json: { segments } };
+		return { json: { segments }, pairedItem: { item: itemIndex } };
 	}
 
 	const text = extractTranscriptText(resultPayload);
-	return { json: { text } };
+	return { json: { text }, pairedItem: { item: itemIndex } };
 }

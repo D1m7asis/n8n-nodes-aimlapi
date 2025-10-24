@@ -42,7 +42,7 @@ module.exports = {
 	/**
 	 * https://prettier.io/docs/en/options.html#end-of-line
 	 */
-	endOfLine: 'lf',
+	endOfLine: 'auto',
 
 	/**
 	 * https://prettier.io/docs/en/options.html#print-width
