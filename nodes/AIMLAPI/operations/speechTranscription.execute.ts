@@ -1,4 +1,5 @@
 import { randomBytes } from 'crypto';
+import { setTimeout as sleep } from 'timers/promises';
 import type { IDataObject, INodeExecutionData } from 'n8n-workflow';
 import { createRequestOptions } from '../utils/request';
 import type { OperationExecuteContext, SpeechTranscriptionExtractOption } from '../types';
@@ -67,12 +68,6 @@ class MultipartFormBuilder {
 			},
 		};
 	}
-}
-
-function sleep(duration: number) {
-	return new Promise<void>((resolve) => {
-		setTimeout(resolve, duration);
-	});
 }
 
 function toList(value: unknown): string[] {

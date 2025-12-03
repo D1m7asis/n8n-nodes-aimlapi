@@ -1,4 +1,5 @@
 import type { IDataObject, IExecuteFunctions } from 'n8n-workflow';
+import { setTimeout as sleep } from 'timers/promises';
 import { createRequestOptions } from './request';
 
 const SUCCESS_STATUSES = new Set([
@@ -28,12 +29,6 @@ interface GenerationOptions {
 	mediaType: MediaType;
 	pollIntervalMs?: number;
 	maxAttempts?: number;
-}
-
-function sleep(duration: number) {
-	return new Promise<void>((resolve) => {
-		setTimeout(resolve, duration);
-	});
 }
 
 function collectObjects(root: unknown): IDataObject[] {
