@@ -1,6 +1,5 @@
 import { randomBytes } from 'crypto';
-import { setTimeout as sleep } from 'timers/promises';
-import type { IDataObject, INodeExecutionData } from 'n8n-workflow';
+import { sleep, type IDataObject, type INodeExecutionData } from 'n8n-workflow';
 import { createRequestOptions } from '../utils/request';
 import type { OperationExecuteContext, SpeechTranscriptionExtractOption } from '../types';
 

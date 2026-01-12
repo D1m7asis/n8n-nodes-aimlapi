@@ -1,5 +1,4 @@
-import type { IDataObject, IExecuteFunctions } from 'n8n-workflow';
-import { setTimeout as sleep } from 'timers/promises';
+import { sleep, type IDataObject, type IExecuteFunctions } from 'n8n-workflow';
 import { createRequestOptions } from './request';
 
 const SUCCESS_STATUSES = new Set([
